@@ -1,0 +1,35 @@
+# --- Dati -------------------------------------------------------------
+# La sorgente di verita' e' Zenodo, non un backup su git.
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/checksums.md5
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Risultati pesanti ------------------------------------------------
+results/models/*
+!results/models/.gitkeep
+# I JSON delle run e le figure invece si versionano: sono il registro
+# dei risultati e finiscono nel report.
+
+# --- Python -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+
+# --- LaTeX ------------------------------------------------------------
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.bbl
+report/*.blg
+report/*.synctex.gz
+report/*.fdb_latexmk
+report/*.fls
+
+# --- Sistema ----------------------------------------------------------
+.DS_Store

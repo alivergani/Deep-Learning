@@ -1,0 +1,58 @@
+# =============================================================================
+# Configurazione di default del progetto 
+#
+# Ogni script legge da qui: non mettere MAI path o numeri fisici hardcoded
+# nel codice o nei notebook.
+# =============================================================================
+
+paths:
+  raw: data/raw                  # download di Zenodo, sola lettura
+  processed: data/processed      # tutto ciò che genera il nostro codice
+  results: results
+  figures: results/figures
+
+# -----------------------------------------------------------------------------
+# File del dataset R&D delle LHC Olympics 2020
+# Zenodo: https://zenodo.org/records/6466204  (DOI 10.5281/zenodo.6466204)
+# -----------------------------------------------------------------------------
+files:
+  # Feature gia' clusterizzate: 1M QCD + 100k segnale 2-prong, con label.
+  # E' il file su cui gira il 90% del progetto.
+  features_main: events_anomalydetection_v2.features.h5
+
+  # Feature del segnale alternativo 3-prong (X,Y -> qqq). Nessuna label:
+  # sono tutti segnale per costruzione.
+  features_signal_3prong: events_anomalydetection_Z_XY_qqq.features.h5
+
+  # Costituenti grezzi, (1.1M, 2101). Solo per l'estensione CNN / deep sets.
+  raw_events: events_anomalydetection_v2.h5
+
+  # Output di prepare_data.py
+  processed_main: features.parquet
+  processed_signal_3prong: features_3prong.parquet
+
+# -----------------------------------------------------------------------------
+# Parametri fisici
+# -----------------------------------------------------------------------------
+physics:
+  # Il segnale R&D e' un W' da 3.5 TeV -> X(500 GeV) + Y(100 GeV)
+  signal_mass_gev: 3500.0
+
+  # Finestra di segnale e sidebands per l'ipotesi di massa nominale [GeV].
+  # Usate come default; la scansione in massa le fa scorrere.
+  signal_region: [3300.0, 3700.0]
+  sidebands: [[3100.0, 3300.0], [3700.0, 3900.0]]
+
+  # Range in m_JJ su cui si fa il bump hunt e la scansione [GeV]
+  mjj_range: [2800.0, 4600.0]
+  mjj_bin_width: 100.0
+
+  # Il file contiene S/B ~ 10%, irrealistico. Qui si fissa quanti eventi
+  # di segnale iniettare in tutto il fondo disponibile.
+  n_signal_injected: 1500
+
+# -----------------------------------------------------------------------------
+# Riproducibilita'
+# -----------------------------------------------------------------------------
+seed: 42
+n_folds: 5
