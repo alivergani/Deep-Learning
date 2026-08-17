@@ -3,7 +3,7 @@ import numpy as np
 from features import TUTTE, INDICI
 
 ROOT = Path(__file__).resolve().parent.parent
-CARTELLA = ROOT / "data" / "processed_small"
+CARTELLA = ROOT / "data" / "processed"
 
 X = np.load(CARTELLA / "X.npy")
 y = np.load(CARTELLA / "y.npy")
