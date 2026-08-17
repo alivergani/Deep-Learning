@@ -30,10 +30,10 @@ import pandas as pd
 PROGETTO = Path(__file__).resolve().parent.parent
 
 FILE_INPUT = PROGETTO / "data" / "raw" / "higgs.zip"
-CARTELLA_OUT = PROGETTO / "data" / "processed_small"
+CARTELLA_OUT = PROGETTO / "data" / "processed"
 
 BLOCCO = 500_000                    # righe lette alla volta
-N_RIGHE = 100_000               # righe da leggere (il dataset completo) 11_000_000
+N_RIGHE = 11_000_000               # righe da leggere (il dataset completo) 11_000_000
 
 # Per una prova veloce metti N_RIGHE = 100_000 e cambia il nome della cartella
 # in "processed_small". Deve finire in pochi secondi.
