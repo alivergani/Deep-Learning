@@ -3,8 +3,13 @@ pandas==3.0.5
 scikit-learn==1.9.0
 matplotlib==3.11.0
 
-# Versione CPU-only (quella in uso ora, senza GPU disponibile in questo
-# ambiente). "pip install torch" da solo puo' scaricare la build CUDA,
-# molto piu' pesante; per la CPU-only serve l'indice dedicato:
-#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+# torch va installato a parte con l'indice giusto per la macchina, non con
+# "pip install -r requirements.txt" da solo:
+#
+#   macchina senza GPU (es. questa, Dirac):
+#     pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+#
+#   macchina con GPU Blackwell (RTX 50xx, es. RTX 5060 Ti, sm_120):
+#     serve CUDA 12.8+ nella build, altrimenti la GPU non viene riconosciuta
+#     pip install torch --index-url https://download.pytorch.org/whl/cu128
 torch==2.13.0
