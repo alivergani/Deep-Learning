@@ -100,7 +100,6 @@ Dataset **HIGGS** dallo UCI Machine Learning Repository: 11.000.000 eventi, 29 c
 ├── src/            # preparazione dati, modelli, training, valutazione
 ├── notebooks/      # esplorazione, esperimenti, figure
 ├── results/        # metriche, curve ROC, checkpoint
-└── report/         # relazione
 ```
 
 ## 7. Deviazioni consapevoli dal paper

@@ -56,7 +56,7 @@ EPOCHE_RAMPA = 200
 MAX_EPOCHE = 300
 PAZIENZA = 10
 
-N_THREAD = 2                 # 0 = lascia decidere a PyTorch
+N_THREAD = 0                # 0 = lascia decidere a PyTorch
 
 # ---------------------------------------------------------------------------
 

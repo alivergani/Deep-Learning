@@ -1,0 +1,10 @@
+numpy==2.4.6
+pandas==3.0.5
+scikit-learn==1.9.0
+matplotlib==3.11.0
+
+# Versione CPU-only (quella in uso ora, senza GPU disponibile in questo
+# ambiente). "pip install torch" da solo puo' scaricare la build CUDA,
+# molto piu' pesante; per la CPU-only serve l'indice dedicato:
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+torch==2.13.0
