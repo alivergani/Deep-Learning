@@ -23,7 +23,7 @@ N_UNITA = 300              # unita' per strato nascosto
 
 # Il paper dice "rete a 5 strati". Il conteggio dei parametri riportato
 # nell'articolo (279.901) torna solo contando lo strato di uscita fra i 5,
-# cioe' con 4 strati nascosti. Vedi il calcolo nel README.
+# cioe' con 4 strati nascosti. 
 N_STRATI_PROFONDA = 4
 N_STRATI_SHALLOW = 1
 

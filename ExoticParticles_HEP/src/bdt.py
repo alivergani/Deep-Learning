@@ -14,6 +14,7 @@ quindi la tabella riassuntiva li raccoglie automaticamente.
 """
 
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -40,9 +41,12 @@ N_TEST = 500_000
 CARTELLA_DATI = None         # None = data/processed
 
 # Parametri del BDT.
-# Sono valori ragionevoli e vicini a quelli tipici di TMVA; il paper non
-# specifica gli iperparametri usati per il suo BDT.
-N_ALBERI = 1500              # numero massimo di alberi
+# Il paper non specifica gli iperparametri del suo BDT.
+# Il tetto di 3000 alberi e' un budget dichiarato, non un punto di convergenza:
+# le curve prodotte da bdt_curva.py mostrano che su low-level il modello sta
+# ancora guadagnando (+0.004 nell'ultimo quarto), mentre su high-level e'
+# saturo. I valori del paper si raggiungono tutti entro 600 alberi.
+N_ALBERI = 3000              # numero massimo di alberi
 PROFONDITA_MASSIMA = 6       # profondita' di ciascun albero
 LEARNING_RATE = 0.1
 PAZIENZA = 20                # early stopping sulla validation
@@ -52,6 +56,31 @@ PAZIENZA = 20                # early stopping sulla validation
 
 PROGETTO = Path(__file__).resolve().parent.parent
 CARTELLA_RISULTATI = PROGETTO / "results"
+
+
+# Argomenti facoltativi da riga di comando, come in esperimenti.py:
+#     "low" / "high" / "complete"   -> il feature set
+#     numeri                        -> i semi
+#
+#     python src/bdt.py complete
+#     python src/bdt.py low 0 1
+
+FEATURE_SET_VALIDI = ["low", "high", "complete"]
+semi_da_riga_comando = []
+
+for argomento in sys.argv[1:]:
+    if argomento.isdigit():
+        semi_da_riga_comando.append(int(argomento))
+    elif argomento in FEATURE_SET_VALIDI:
+        FEATURE_SET = argomento
+    else:
+        raise SystemExit(
+            f"Argomento non riconosciuto: '{argomento}'\n"
+            f"Attesi: {FEATURE_SET_VALIDI}, oppure numeri (i semi)."
+        )
+
+if semi_da_riga_comando:
+    SEMI = semi_da_riga_comando
 
 NOME = f"bdt_{FEATURE_SET}"
 

@@ -24,9 +24,8 @@ import pandas as pd
 # PARAMETRI - sono le uniche righe da modificare
 # ---------------------------------------------------------------------------
 
-# __file__ e' il percorso di questo script. Il suo "genitore" e' src/,
-# e il genitore di src/ e' la cartella principale del progetto.
-# Cosi' i percorsi qui sotto funzionano da qualunque cartella tu lanci lo script.
+# __file__ e' il percorso di questo script.
+# I percorsi qui sotto funzionano da qualunque cartella si lanci lo script.
 PROGETTO = Path(__file__).resolve().parent.parent
 
 FILE_INPUT = PROGETTO / "data" / "raw" / "higgs.zip"
@@ -36,7 +35,7 @@ BLOCCO = 500_000                    # righe lette alla volta
 N_RIGHE = 11_000_000               # righe da leggere (il dataset completo) 11_000_000
 
 # Per una prova veloce metti N_RIGHE = 100_000 e cambia il nome della cartella
-# in "processed_small". Deve finire in pochi secondi.
+# in "processed_small".
 
 # ---------------------------------------------------------------------------
 
@@ -64,8 +63,7 @@ def apri_file(percorso):
     return open(percorso)
 
 
-# 0. Controlli preliminari, cosi' se qualcosa manca lo scopriamo subito
-#    e non dopo venti minuti di lettura.
+# Controlli preliminari
 if not FILE_INPUT.exists():
     raise FileNotFoundError(
         f"Non trovo l'archivio in:\n  {FILE_INPUT}\n"
@@ -74,13 +72,13 @@ if not FILE_INPUT.exists():
 
 CARTELLA_OUT.mkdir(parents=True, exist_ok=True)   # crea la cartella se non c'e'
 
-# 1. Prepariamo due array vuoti della dimensione giusta.
+# Prepariamo due array vuoti della dimensione giusta.
 #    Li riempiamo poi un pezzo alla volta. float32 perche' e' il tipo
 #    che usano PyTorch e TensorFlow, e occupa meta' memoria del float64.
 X = np.empty((N_RIGHE, 28), dtype=np.float32)
 y = np.empty((N_RIGHE, 1), dtype=np.float32)
 
-# 2. Leggiamo il CSV a blocchi.
+# Leggiamo il CSV a blocchi.
 print("Leggo", FILE_INPUT)
 file_csv = apri_file(FILE_INPUT)
 
@@ -103,14 +101,14 @@ for numero_blocco, blocco in enumerate(lettore, start=1):
 
     print(f"  blocco {numero_blocco}: lette {riga:,} righe su {N_RIGHE:,}")
 
-# 3. Controllo che il numero di righe sia quello atteso.
+# Controllo che il numero di righe sia quello atteso.
 if riga != N_RIGHE:
     raise ValueError(
         f"Lette {riga:,} righe invece di {N_RIGHE:,}. "
         f"Correggi N_RIGHE e rilancia."
     )
 
-# 4. Salviamo su disco.
+# Salviamo su disco.
 np.save(CARTELLA_OUT / "X.npy", X)
 np.save(CARTELLA_OUT / "y.npy", y)
 
