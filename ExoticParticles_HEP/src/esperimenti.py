@@ -57,14 +57,11 @@ PAZIENZA = 10
 
 N_THREAD = 2                 # 0 = lascia decidere a PyTorch
 
-USA_TENSORBOARD = True       # scrive i grafici di monitoraggio in runs/
-
 # ---------------------------------------------------------------------------
 
 
 PROGETTO = Path(__file__).resolve().parent.parent
 CARTELLA_RISULTATI = PROGETTO / "results"
-CARTELLA_LOG = PROGETTO / "runs"
 
 
 # --------------------------------------------------------------------------
@@ -175,8 +172,6 @@ def main():
             max_epoche=MAX_EPOCHE,
             pazienza=PAZIENZA,
             seme=seme,
-            cartella_log=CARTELLA_LOG / f"{NOME}_seme{seme}" if USA_TENSORBOARD else None,
-            file_checkpoint=str(base) + "_checkpoint.pt",
         )
 
         # --- valutazione finale sul TEST set -------------------------------
@@ -196,11 +191,6 @@ def main():
         curva = calcola_curva(modello, X_test, y_test,
                               nome=f"{MODELLO} {FEATURE_SET} (seme {seme})")
         salva_curva(curva, str(base) + "_roc.npz")
-
-        # Il seme e' completato: il checkpoint non serve piu' e occupa spazio.
-        checkpoint = Path(str(base) + "_checkpoint.pt")
-        if checkpoint.exists():
-            checkpoint.unlink()
 
         auc_di_ogni_seme.append(float(auc_test))
 
