@@ -3,14 +3,12 @@ Prepara i dati per l'addestramento: divisione, standardizzazione, scelta feature
 
 """
 
-from pathlib import Path
-
+from pathlib import Path # questa libreria serve per gestire i percorsi dei file in modo indipendente dal sistema operativo
 import numpy as np
-
 from features import INDICI
 
 
-PROGETTO = Path(__file__).resolve().parent.parent
+PROGETTO = Path(__file__).resolve().parent.parent # cartella principale del progetto, il .parent.parent serve per risalire di due livelli, da src/data.py a src/ e poi a .
 CARTELLA_DATI = PROGETTO / "data" / "processed"
 
 # Dimensioni degli insiemi, come nel paper.
@@ -28,7 +26,7 @@ def prepara_dati(feature_set="complete",
                  n_train=N_TRAIN,
                  n_val=N_VAL,
                  n_test=N_TEST,
-                 silenzioso=False):
+                 silenzioso=False): # silenzioso serve per non stampare i dettagli della preparazione dei dati
     """
     Restituisce un dizionario con le tre coppie (X, y) gia' pronte.
 
@@ -41,7 +39,7 @@ def prepara_dati(feature_set="complete",
     # accetta sia una stringa sia un Path
     cartella = Path(cartella)
 
-    # --- 1. carichiamo gli array completi ---------------------------------
+    # --- carichiamo gli array completi ---------------------------------
     X = np.load(cartella / "X.npy", mmap_mode="r")
     y = np.load(cartella / "y.npy")
     n_totale = len(X)
@@ -52,7 +50,7 @@ def prepara_dati(feature_set="complete",
             f"{n_totale:,}. Riduci n_train, n_val o n_test."
         )
 
-    # --- 2. dividiamo ------------------------------------------------------
+    # ---  dividiamo ------------------------------------------------------
     # test: gli ultimi n_test eventi
     # val:  i n_val eventi subito prima
     # train: i primi n_train eventi
@@ -69,7 +67,7 @@ def prepara_dati(feature_set="complete",
     X_val = X_val[:, colonne]
     X_test = X_test[:, colonne]
 
-    # --- 4. standardizziamo ------------------------------------------------
+    # --- standardizziamo ------------------------------------------------
     # Le statistiche si calcolano SOLO sul training set, mai su val o test:
     # altrimenti informazione dal test filtrerebbe nella trasformazione.
     media, dev, positiva = calcola_statistiche(X_train)
@@ -93,6 +91,10 @@ def prepara_dati(feature_set="complete",
         "statistiche": (media, dev, positiva),
     }
 
+# la standardizzazione proposta sopra è presa dal paper di riferimento. è stato verificato che i dati grezzi in realtà avevano già questa standardizzazione intrinseca, cosa che però non importa. Motivi per tenerla:
+# 1)coefficienti li calcoli sui tuoi 2.6M, non sugli 11M degli autori. E si vede: m_lv sta a 1.05, non a 1.00. Quel 5% di scarto senza standardizzazione resterebbe.
+# 2) Nessuna fuga di informazione. Media e deviazione vengono solo dal training set e vengono applicate tal quali a validation e test.
+# 3) Il codice resta corretto su dati grezzi. Se un domani parti dal file originale invece che da quello preprocessato da UCI, funziona uguale.
 
 def calcola_statistiche(X_train):
     """

@@ -6,6 +6,7 @@ passandola da riga di comando:
 
     python src/esperimenti.py deep low
     python src/esperimenti.py deep low moderno 0
+    python src/esperimenti.py deep low moderno small 0     (prova rapida)
 
 Ogni seme gia' completato viene saltato, quindi si puo' rilanciare lo
 script dopo un'interruzione senza perdere il lavoro fatto.
@@ -15,7 +16,11 @@ I due stack scrivono su file con nomi diversi, quindi non si sovrascrivono:
     deep_low_seme0_modello.pt           stack 2014
     deep_low_moderno_seme0_modello.pt   stack moderno
 
-Prodotti in results/:
+Con "small" cambiano INSIEME la cartella dei dati e quella dei risultati:
+i risultati di prova finiscono in results_small/ e non possono mescolarsi
+con quelli veri.
+
+Prodotti in results/ (o results_small/):
     <nome>_seme<k>_modello.pt      pesi della rete
     <nome>_seme<k>_storia.json     perdita e AUC epoca per epoca
     <nome>_seme<k>_roc.npz         curva ROC sul test set
@@ -55,13 +60,18 @@ SEMI = [0, 1, 2, 3, 4]       # 5 inizializzazioni casuali, come nel paper
 # Per lo stack moderno basta un seme solo, purche' sia uno di questi:
 # cosi' i due stack vedono gli stessi dati nello stesso ordine.
 
-# Parametri dei dati
+# Dataset ridotto per le prove. Si attiva SOLO da riga di comando con
+# l'argomento "small": non e' una variabile da cambiare a mano, perche'
+# dimenticarsela accesa significherebbe lanciare un training vero sui dati
+# di prova (o viceversa) senza accorgersene.
+PICCOLO = False
+
+# Parametri dei dati (dataset completo)
 N_TRAIN = 2_600_000
 N_VAL = 500_000
 N_TEST = 500_000
-CARTELLA_DATI = None         # None = data/processed. Metti un Path per il piccolo.
 
-# Parametri di addestramento
+# Parametri di addestramento (dataset completo)
 BATCH = 100
 EPOCHE_RAMPA = 200           # usato solo dallo stack 2014
 MAX_EPOCHE = 300
@@ -73,7 +83,6 @@ N_THREAD = 2                 # 0 = lascia decidere a PyTorch
 
 
 PROGETTO = Path(__file__).resolve().parent.parent
-CARTELLA_RISULTATI = PROGETTO / "results"
 
 
 # --------------------------------------------------------------------------
@@ -83,6 +92,7 @@ CARTELLA_RISULTATI = PROGETTO / "results"
 #     "deep" / "shallow"            -> il modello
 #     "low" / "high" / "complete"   -> il feature set
 #     "2014" / "moderno"            -> lo stack
+#     "small"                       -> dataset ridotto, risultati separati
 #     numeri                        -> i semi da addestrare
 #
 # Esempi:
@@ -90,6 +100,7 @@ CARTELLA_RISULTATI = PROGETTO / "results"
 #     python src/esperimenti.py deep low             tutti i semi della lista
 #     python src/esperimenti.py deep low 0 1         solo i semi 0 e 1
 #     python src/esperimenti.py deep low moderno 0   stack moderno, seme 0
+#     python src/esperimenti.py deep low small 0     prova rapida
 #
 # Per parallelizzare, due sessioni tmux:
 #     python src/esperimenti.py deep low 0 1
@@ -108,6 +119,8 @@ semi_da_riga_comando = []
 for argomento in sys.argv[1:]:
     if argomento in STACK_VALIDI:
         STACK = argomento
+    elif argomento == "small":
+        PICCOLO = True
     elif argomento.isdigit():
         semi_da_riga_comando.append(int(argomento))
     elif argomento in MODELLI_VALIDI:
@@ -118,11 +131,29 @@ for argomento in sys.argv[1:]:
         raise SystemExit(
             f"Argomento non riconosciuto: '{argomento}'\n"
             f"Attesi: {MODELLI_VALIDI}, {FEATURE_SET_VALIDI}, "
-            f"{STACK_VALIDI}, oppure numeri (i semi)."
+            f"{STACK_VALIDI}, 'small', oppure numeri (i semi)."
         )
 
 if semi_da_riga_comando:
     SEMI = semi_da_riga_comando
+
+# --- dove leggere i dati e dove scrivere i risultati ----------------------
+# I due percorsi cambiano insieme: e' l'unico modo per essere sicuri che i
+# risultati di prova non finiscano mai fra quelli veri.
+if PICCOLO:
+    CARTELLA_DATI = PROGETTO / "data" / "processed_small"
+    CARTELLA_RISULTATI = PROGETTO / "results_small"
+    # ADATTA questi numeri alla dimensione vera di processed_small:
+    # la somma dei tre non puo' superare il numero di eventi disponibili.
+    N_TRAIN = 70_000
+    N_VAL = 15_000
+    N_TEST = 15_000
+    BATCH = 1000
+    MAX_EPOCHE = 20
+    EPOCHE_RAMPA = 5
+else:
+    CARTELLA_DATI = None     # None = data/processed, il default di data.py
+    CARTELLA_RISULTATI = PROGETTO / "results"
 
 # Le due impostazioni che dipendono dallo stack.
 if STACK == "2014":
@@ -158,12 +189,15 @@ def main():
     CARTELLA_RISULTATI.mkdir(parents=True, exist_ok=True)
 
     print("=" * 60)
+    if PICCOLO:
+        print(">>> MODALITA' PROVA: dati ridotti, risultati in results_small/")
     print(f"Configurazione : {NOME}")
     print(f"Stack          : {STACK}  ({ATTIVAZIONE} + {OTTIMIZZATORE})")
     print(f"Semi           : {SEMI}")
     print(f"Eventi train   : {N_TRAIN:,}")
     print(f"Batch          : {BATCH}")
     print(f"Epoche massime : {MAX_EPOCHE}")
+    print(f"Risultati in   : {CARTELLA_RISULTATI.name}/")
     print("=" * 60)
     print()
 
@@ -221,6 +255,7 @@ def main():
         storia["minuti"] = round((time.time() - t0) / 60, 1)
         storia["stack"] = STACK
         storia["n_epoche"] = len(storia["perdita_val"])
+        storia["piccolo"] = PICCOLO
         with open(str(base) + "_storia.json", "w") as f:
             json.dump(storia, f)
 
@@ -268,6 +303,7 @@ def main():
         "stack": STACK,
         "attivazione": ATTIVAZIONE,
         "ottimizzatore": OTTIMIZZATORE,
+        "piccolo": PICCOLO,
         "n_input": n_input,
         "n_train": N_TRAIN,
         "batch": BATCH,
