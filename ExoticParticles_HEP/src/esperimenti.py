@@ -1,16 +1,19 @@
 """
-Lancia UNA configurazione (modello + feature set) su piu' semi casuali.
+Lancia UNA configurazione (modello + feature set + stack) su piu' semi.
 
-Si sceglie la configurazione modificando le variabili qui sotto, poi:
+Si sceglie la configurazione modificando le variabili qui sotto, oppure
+passandola da riga di comando:
 
-    python src/esperimenti.py
-
-Per lanciarlo in background su una macchina remota:
-
-    nohup python src/esperimenti.py > results/log_deep_low.txt 2>&1 &
+    python src/esperimenti.py deep low
+    python src/esperimenti.py deep low moderno 0
 
 Ogni seme gia' completato viene saltato, quindi si puo' rilanciare lo
 script dopo un'interruzione senza perdere il lavoro fatto.
+
+I due stack scrivono su file con nomi diversi, quindi non si sovrascrivono:
+
+    deep_low_seme0_modello.pt           stack 2014
+    deep_low_moderno_seme0_modello.pt   stack moderno
 
 Prodotti in results/:
     <nome>_seme<k>_modello.pt      pesi della rete
@@ -41,7 +44,16 @@ from train import addestra, valuta
 MODELLO = "deep"             # "deep" oppure "shallow"
 FEATURE_SET = "low"          # "low", "high" oppure "complete"
 
+# Lo stack di addestramento:
+#   "2014"    -> tanh + inizializzazione del paper + SGD con rampa di momentum
+#   "moderno" -> ReLU + inizializzazione di He + AdamW con riduzione a plateau
+# Attivazione e ottimizzatore vanno insieme: si sceglie lo stack, non i
+# singoli pezzi.
+STACK = "2014"
+
 SEMI = [0, 1, 2, 3, 4]       # 5 inizializzazioni casuali, come nel paper
+# Per lo stack moderno basta un seme solo, purche' sia uno di questi:
+# cosi' i due stack vedono gli stessi dati nello stesso ordine.
 
 # Parametri dei dati
 N_TRAIN = 2_600_000
@@ -51,7 +63,7 @@ CARTELLA_DATI = None         # None = data/processed. Metti un Path per il picco
 
 # Parametri di addestramento
 BATCH = 100
-EPOCHE_RAMPA = 200
+EPOCHE_RAMPA = 200           # usato solo dallo stack 2014
 MAX_EPOCHE = 300
 PAZIENZA = 10
 
@@ -70,26 +82,33 @@ CARTELLA_RISULTATI = PROGETTO / "results"
 # Si riconoscono dal valore, quindi l'ordine non conta:
 #     "deep" / "shallow"            -> il modello
 #     "low" / "high" / "complete"   -> il feature set
+#     "2014" / "moderno"            -> lo stack
 #     numeri                        -> i semi da addestrare
 #
 # Esempi:
 #     python src/esperimenti.py                      usa i valori scritti sopra
 #     python src/esperimenti.py deep low             tutti i semi della lista
 #     python src/esperimenti.py deep low 0 1         solo i semi 0 e 1
-#     python src/esperimenti.py 2 3 4                solo i semi, modello da sopra
+#     python src/esperimenti.py deep low moderno 0   stack moderno, seme 0
 #
 # Per parallelizzare, due sessioni tmux:
 #     python src/esperimenti.py deep low 0 1
 #     python src/esperimenti.py deep low 2 3 4
+#
+# Attenzione: "2014" e' anche un numero, ma viene letto come stack.
+# Se ti servisse davvero il seme 2014, cambia la lista SEMI qui sopra.
 # --------------------------------------------------------------------------
 
 MODELLI_VALIDI = ["deep", "shallow"]
 FEATURE_SET_VALIDI = ["low", "high", "complete"]
+STACK_VALIDI = ["2014", "moderno"]
 
 semi_da_riga_comando = []
 
 for argomento in sys.argv[1:]:
-    if argomento.isdigit():
+    if argomento in STACK_VALIDI:
+        STACK = argomento
+    elif argomento.isdigit():
         semi_da_riga_comando.append(int(argomento))
     elif argomento in MODELLI_VALIDI:
         MODELLO = argomento
@@ -98,21 +117,37 @@ for argomento in sys.argv[1:]:
     else:
         raise SystemExit(
             f"Argomento non riconosciuto: '{argomento}'\n"
-            f"Attesi: {MODELLI_VALIDI}, {FEATURE_SET_VALIDI}, oppure numeri (i semi)."
+            f"Attesi: {MODELLI_VALIDI}, {FEATURE_SET_VALIDI}, "
+            f"{STACK_VALIDI}, oppure numeri (i semi)."
         )
 
 if semi_da_riga_comando:
     SEMI = semi_da_riga_comando
 
-NOME = f"{MODELLO}_{FEATURE_SET}"
+# Le due impostazioni che dipendono dallo stack.
+if STACK == "2014":
+    ATTIVAZIONE = "tanh"
+    OTTIMIZZATORE = "sgd"
+elif STACK == "moderno":
+    ATTIVAZIONE = "relu"
+    OTTIMIZZATORE = "adamw"
+else:
+    raise SystemExit(f"STACK deve essere uno di {STACK_VALIDI}")
+
+# Il nome dei file. Lo stack 2014 mantiene il nome vecchio, senza suffisso:
+# cosi' i run gia' completati continuano a essere riconosciuti e saltati.
+if STACK == "2014":
+    NOME = f"{MODELLO}_{FEATURE_SET}"
+else:
+    NOME = f"{MODELLO}_{FEATURE_SET}_{STACK}"
 
 
 def costruisci_modello(n_input):
     """Crea la rete richiesta dalla configurazione."""
     if MODELLO == "deep":
-        return rete_profonda(n_input=n_input)
+        return rete_profonda(n_input=n_input, attivazione=ATTIVAZIONE)
     if MODELLO == "shallow":
-        return rete_shallow(n_input=n_input)
+        return rete_shallow(n_input=n_input, attivazione=ATTIVAZIONE)
     raise ValueError("MODELLO deve essere 'deep' oppure 'shallow'")
 
 
@@ -124,6 +159,7 @@ def main():
 
     print("=" * 60)
     print(f"Configurazione : {NOME}")
+    print(f"Stack          : {STACK}  ({ATTIVAZIONE} + {OTTIMIZZATORE})")
     print(f"Semi           : {SEMI}")
     print(f"Eventi train   : {N_TRAIN:,}")
     print(f"Batch          : {BATCH}")
@@ -143,8 +179,6 @@ def main():
     n_input = len(INDICI[FEATURE_SET])
     print()
 
-    auc_di_ogni_seme = []
-
     for seme in SEMI:
         base = CARTELLA_RISULTATI / f"{NOME}_seme{seme}"
         file_modello = Path(str(base) + "_modello.pt")
@@ -154,7 +188,6 @@ def main():
             with open(str(base) + "_storia.json") as f:
                 salvato = json.load(f)
             print(f"[seme {seme}] gia' completato, AUC = {salvato['auc_test']:.4f}")
-            auc_di_ogni_seme.append(salvato["auc_test"])
             continue
 
         print(f"\n{'-' * 60}")
@@ -171,6 +204,7 @@ def main():
             epoche_rampa=EPOCHE_RAMPA,
             max_epoche=MAX_EPOCHE,
             pazienza=PAZIENZA,
+            ottimizzatore=OTTIMIZZATORE,
             seme=seme,
         )
 
@@ -185,21 +219,26 @@ def main():
         storia["auc_test"] = float(auc_test)
         storia["perdita_test"] = float(perdita_test)
         storia["minuti"] = round((time.time() - t0) / 60, 1)
+        storia["stack"] = STACK
+        storia["n_epoche"] = len(storia["perdita_val"])
         with open(str(base) + "_storia.json", "w") as f:
             json.dump(storia, f)
 
         curva = calcola_curva(modello, X_test, y_test,
-                              nome=f"{MODELLO} {FEATURE_SET} (seme {seme})")
+                              nome=f"{MODELLO} {FEATURE_SET} {STACK} (seme {seme})")
         salva_curva(curva, str(base) + "_roc.npz")
-
-        auc_di_ogni_seme.append(float(auc_test))
 
     # --- riepilogo della configurazione -------------------------------------
     # Rileggiamo TUTTI i semi presenti su disco, non solo quelli addestrati da
     # questo processo: cosi' il riepilogo resta corretto anche se piu' processi
     # girano in parallelo, ciascuno su un sottoinsieme di semi.
+    #
+    # Il pattern non confonde i due stack: cercando "deep_low_seme*" non si
+    # pesca "deep_low_moderno_seme0", perche' dopo "deep_low_" il pattern
+    # pretende letteralmente "_seme".
     semi_trovati = []
     valori_trovati = []
+    epoche_trovate = []
 
     for file_storia in sorted(CARTELLA_RISULTATI.glob(f"{NOME}_seme*_storia.json")):
         numero = int(file_storia.name.split("_seme")[1].split("_")[0])
@@ -207,21 +246,36 @@ def main():
             info = json.load(f)
         semi_trovati.append(numero)
         valori_trovati.append(float(info["auc_test"]))
+        epoche_trovate.append(len(info["perdita_val"]))
 
     ordine = np.argsort(semi_trovati)
     semi_trovati = [semi_trovati[i] for i in ordine]
     valori = np.asarray([valori_trovati[i] for i in ordine])
+    epoche = [epoche_trovate[i] for i in ordine]
+
+    # Deviazione standard campionaria (ddof=1): stiamo stimando la
+    # dispersione da un campione di semi, non descrivendo una popolazione.
+    # Con un solo seme non e' definita, e mettiamo None invece di 0:
+    # uno zero si scambierebbe per "nessuna variabilita'".
+    if len(valori) > 1:
+        dev_std = float(valori.std(ddof=1))
+    else:
+        dev_std = None
 
     riepilogo = {
         "modello": MODELLO,
         "feature_set": FEATURE_SET,
+        "stack": STACK,
+        "attivazione": ATTIVAZIONE,
+        "ottimizzatore": OTTIMIZZATORE,
         "n_input": n_input,
         "n_train": N_TRAIN,
         "batch": BATCH,
         "semi": semi_trovati,
         "auc_test": [float(v) for v in valori],
         "auc_medio": float(valori.mean()),
-        "auc_dev_std": float(valori.std()),
+        "auc_dev_std": dev_std,
+        "n_epoche": epoche,
     }
 
     with open(CARTELLA_RISULTATI / f"{NOME}_riepilogo.json", "w") as f:
@@ -229,9 +283,13 @@ def main():
 
     print()
     print("=" * 60)
-    print(f"{NOME}: AUC = {valori.mean():.4f} ({valori.std():.4f})")
+    if dev_std is None:
+        print(f"{NOME}: AUC = {valori.mean():.4f}  (un solo seme)")
+    else:
+        print(f"{NOME}: AUC = {valori.mean():.4f} ({dev_std:.4f})")
     print(f"semi inclusi  : {semi_trovati}")
     print(f"valori singoli: {np.round(valori, 4).tolist()}")
+    print(f"epoche         : {epoche}")
     print("=" * 60)
 
 
