@@ -11,16 +11,16 @@ passandola da riga di comando:
 Ogni seme gia' completato viene saltato, quindi si puo' rilanciare lo
 script dopo un'interruzione senza perdere il lavoro fatto.
 
-I due stack scrivono su file con nomi diversi, quindi non si sovrascrivono:
+I due stack scrivono in cartelle diverse, quindi non si sovrascrivono:
 
-    deep_low_seme0_modello.pt           stack 2014
-    deep_low_moderno_seme0_modello.pt   stack moderno
+    results/riproduzione/deep_low_seme0_modello.pt    stack 2014
+    results/moderno/deep_low_seme0_modello.pt         stack moderno
 
 Con "small" cambiano INSIEME la cartella dei dati e quella dei risultati:
 i risultati di prova finiscono in results_small/ e non possono mescolarsi
 con quelli veri.
 
-Prodotti in results/ (o results_small/):
+Prodotti nella cartella scelta:
     <nome>_seme<k>_modello.pt      pesi della rete
     <nome>_seme<k>_storia.json     perdita e AUC epoca per epoca
     <nome>_seme<k>_roc.npz         curva ROC sul test set
@@ -137,23 +137,6 @@ for argomento in sys.argv[1:]:
 if semi_da_riga_comando:
     SEMI = semi_da_riga_comando
 
-# --- dove leggere i dati e dove scrivere i risultati ----------------------
-# I due percorsi cambiano insieme: e' l'unico modo per essere sicuri che i
-# risultati di prova non finiscano mai fra quelli veri.
-if PICCOLO:
-    CARTELLA_DATI = PROGETTO / "data" / "processed_small"
-    CARTELLA_RISULTATI = PROGETTO / "results_small"
-    # ADATTA questi numeri alla dimensione vera di processed_small:
-    # la somma dei tre non puo' superare il numero di eventi disponibili.
-    N_TRAIN = 70_000
-    N_VAL = 15_000
-    N_TEST = 15_000
-    BATCH = 1000
-    MAX_EPOCHE = 20
-    EPOCHE_RAMPA = 5
-else:
-    CARTELLA_DATI = None     # None = data/processed, il default di data.py
-    CARTELLA_RISULTATI = PROGETTO / "results"
 
 # Le due impostazioni che dipendono dallo stack.
 if STACK == "2014":
@@ -165,12 +148,26 @@ elif STACK == "moderno":
 else:
     raise SystemExit(f"STACK deve essere uno di {STACK_VALIDI}")
 
-# Il nome dei file. Lo stack 2014 mantiene il nome vecchio, senza suffisso:
-# cosi' i run gia' completati continuano a essere riconosciuti e saltati.
-if STACK == "2014":
-    NOME = f"{MODELLO}_{FEATURE_SET}"
+# --- dove leggere i dati e dove scrivere i risultati ----------------------
+# I percorsi cambiano insieme: e' l'unico modo per essere sicuri che i
+# risultati di prova non finiscano mai fra quelli veri.
+# La sottocartella dice gia' lo stack, quindi il nome del file non lo ripete.
+SOTTOCARTELLA = "riproduzione" if STACK == "2014" else "moderno"
+
+if PICCOLO:
+    CARTELLA_DATI = PROGETTO / "data" / "processed_small"
+    CARTELLA_RISULTATI = PROGETTO / "results_small" / SOTTOCARTELLA
+    N_TRAIN = 70_000
+    N_VAL = 15_000
+    N_TEST = 15_000
+    BATCH = 1000
+    MAX_EPOCHE = 20
+    EPOCHE_RAMPA = 5
 else:
-    NOME = f"{MODELLO}_{FEATURE_SET}_{STACK}"
+    CARTELLA_DATI = None     # None = data/processed, il default di data.py
+    CARTELLA_RISULTATI = PROGETTO / "results" / SOTTOCARTELLA
+
+NOME = f"{MODELLO}_{FEATURE_SET}"
 
 
 def costruisci_modello(n_input):
@@ -190,14 +187,14 @@ def main():
 
     print("=" * 60)
     if PICCOLO:
-        print(">>> MODALITA' PROVA: dati ridotti, risultati in results_small/")
+        print(">>> MODALITA' PROVA: dati ridotti")
     print(f"Configurazione : {NOME}")
     print(f"Stack          : {STACK}  ({ATTIVAZIONE} + {OTTIMIZZATORE})")
     print(f"Semi           : {SEMI}")
     print(f"Eventi train   : {N_TRAIN:,}")
     print(f"Batch          : {BATCH}")
     print(f"Epoche massime : {MAX_EPOCHE}")
-    print(f"Risultati in   : {CARTELLA_RISULTATI.name}/")
+    print(f"Risultati in   : {CARTELLA_RISULTATI.relative_to(PROGETTO)}/")
     print("=" * 60)
     print()
 
@@ -268,9 +265,7 @@ def main():
     # questo processo: cosi' il riepilogo resta corretto anche se piu' processi
     # girano in parallelo, ciascuno su un sottoinsieme di semi.
     #
-    # Il pattern non confonde i due stack: cercando "deep_low_seme*" non si
-    # pesca "deep_low_moderno_seme0", perche' dopo "deep_low_" il pattern
-    # pretende letteralmente "_seme".
+    # I due stack non si confondono perche' stanno in cartelle diverse.
     semi_trovati = []
     valori_trovati = []
     epoche_trovate = []

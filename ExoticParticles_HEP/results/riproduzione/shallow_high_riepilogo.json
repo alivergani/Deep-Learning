@@ -4,6 +4,7 @@
   "stack": "2014",
   "attivazione": "tanh",
   "ottimizzatore": "sgd",
+  "piccolo": false,
   "n_input": 7,
   "n_train": 2600000,
   "batch": 100,

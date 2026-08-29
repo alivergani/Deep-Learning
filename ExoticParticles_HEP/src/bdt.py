@@ -55,7 +55,7 @@ PAZIENZA = 20                # early stopping sulla validation
 
 
 PROGETTO = Path(__file__).resolve().parent.parent
-CARTELLA_RISULTATI = PROGETTO / "results"
+CARTELLA_RISULTATI = PROGETTO / "results" / "bdt"
 
 
 # Argomenti facoltativi da riga di comando, come in esperimenti.py:

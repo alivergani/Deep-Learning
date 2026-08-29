@@ -154,19 +154,20 @@ def tabella_auc(risultati_per_configurazione):
     Costruisce la tabella dei risultati, come la Tabella I del paper.
 
     risultati_per_configurazione: dizionario del tipo
-        {("deep", "low"): [auc_seme0, auc_seme1, ...], ...}
+            {("deep", "low", "2014"): [auc_seme0, auc_seme1, ...], ...}
 
     Restituisce una stringa pronta da stampare.
     """
     righe = []
-    righe.append(f"{'modello':10s} {'feature set':12s} {'AUC medio':>10s} {'dev.std':>9s} {'n':>3s}")
-    righe.append("-" * 48)
+    righe.append(f"{'modello':10s} {'feature set':12s} {'stack':12s} {'AUC medio':>10s} {'dev.std':>9s} {'n':>3s}")
+    righe.append("-" * 60)
 
-    for (modello, feature_set), valori in sorted(risultati_per_configurazione.items()):
+    for (modello, feature_set, stack), valori in sorted(risultati_per_configurazione.items()):
         valori = np.asarray(valori, dtype=float)
+        dev = valori.std(ddof=1) if len(valori) > 1 else float("nan")
         righe.append(
-            f"{modello:10s} {feature_set:12s} "
-            f"{valori.mean():10.4f} {valori.std():9.4f} {len(valori):3d}"
+            f"{modello:10s} {feature_set:12s} {stack:12s} "
+            f"{valori.mean():10.4f} {dev:9.4f} {len(valori):3d}"
         )
 
     return "\n".join(righe)
@@ -175,15 +176,20 @@ def tabella_auc(risultati_per_configurazione):
 def raccogli_risultati(cartella=CARTELLA_RISULTATI):
     """
     Legge tutti i file di riepilogo prodotti da esperimenti.py e restituisce
-    un dizionario {(modello, feature_set): [auc, auc, ...]}.
+    un dizionario {(modello, feature_set, stack): [auc, auc, ...]}.
+
+    rglob invece di glob: i riepiloghi stanno nelle sottocartelle
+    riproduzione/ e moderno/, non nella radice di results/.
     """
     cartella = Path(cartella)
     raccolta = {}
 
-    for file_json in sorted(cartella.glob("*_riepilogo.json")):
+    for file_json in sorted(cartella.rglob("*_riepilogo.json")):
         with open(file_json) as f:
             info = json.load(f)
-        chiave = (info["modello"], info["feature_set"])
+        # Lo stack fa parte della chiave: due configurazioni con lo stesso
+        # nome ma stack diverso sono risultati diversi e non vanno mescolati.
+        chiave = (info["modello"], info["feature_set"], info.get("stack", "2014"))
         raccolta.setdefault(chiave, []).extend(info["auc_test"])
 
     return raccolta

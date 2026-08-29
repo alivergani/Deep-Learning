@@ -54,7 +54,7 @@ CARTELLA_DATI = None
 
 
 PROGETTO = Path(__file__).resolve().parent.parent
-CARTELLA_RISULTATI = PROGETTO / "results"
+CARTELLA_RISULTATI = PROGETTO / "results" /"bdt_auc"
 
 FEATURE_SET_VALIDI = ["low", "high", "complete"]
 for argomento in sys.argv[1:]:

@@ -129,25 +129,24 @@ if semi_da_riga_comando:
 # Gli stessi valori di esperimenti.py: se li cambi la', vanno cambiati anche
 # qui, altrimenti il probe lavora su una fetta di dati diversa da quella su
 # cui il modello e' stato addestrato.
+SOTTOCARTELLA = "riproduzione" if STACK == "2014" else "moderno"
+
 if PICCOLO:
     CARTELLA_DATI = PROGETTO / "data" / "processed_small"
-    CARTELLA_RISULTATI = PROGETTO / "results_small"
+    CARTELLA_RISULTATI = PROGETTO / "results_small" / SOTTOCARTELLA
     N_TRAIN = 70_000
     N_VAL = 15_000
     N_TEST = 15_000
     N_PROBE_TRAIN = 12_000
     N_PROBE_TEST = 3_000
 else:
-    CARTELLA_DATI = None     # None = data/processed, il default di data.py
-    CARTELLA_RISULTATI = PROGETTO / "results"
+    CARTELLA_DATI = None
+    CARTELLA_RISULTATI = PROGETTO / "results" / SOTTOCARTELLA
 
 ATTIVAZIONE = "tanh" if STACK == "2014" else "relu"
 
 # Stesso schema di nomi di esperimenti.py.
-if STACK == "2014":
-    NOME = f"{MODELLO}_{FEATURE_SET}"
-else:
-    NOME = f"{MODELLO}_{FEATURE_SET}_{STACK}"
+NOME = f"{MODELLO}_{FEATURE_SET}"
 
 FILE_MODELLO = CARTELLA_RISULTATI / f"{NOME}_seme{SEME}_modello.pt"
 
