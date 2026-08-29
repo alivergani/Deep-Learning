@@ -25,6 +25,9 @@ Prodotti nella cartella scelta:
     <nome>_seme<k>_storia.json     perdita e AUC epoca per epoca
     <nome>_seme<k>_roc.npz         curva ROC sul test set
     <nome>_riepilogo.json          AUC finali di tutti i semi
+
+I log per TensorBoard vanno invece in runs/<stack>/<nome>_seme<k>/.
+Per guardarli:  tensorboard --logdir=runs
 """
 
 import json
@@ -78,6 +81,9 @@ MAX_EPOCHE = 300
 PAZIENZA = 10
 
 N_THREAD = 2                 # 0 = lascia decidere a PyTorch
+
+# Se True, scrive i log per TensorBoard in runs/.
+TENSORBOARD = True
 
 # ---------------------------------------------------------------------------
 
@@ -167,6 +173,15 @@ else:
     CARTELLA_DATI = None     # None = data/processed, il default di data.py
     CARTELLA_RISULTATI = PROGETTO / "results" / SOTTOCARTELLA
 
+# I log di TensorBoard stanno fuori da results/: sono file di monitoraggio,
+# non risultati da conservare o sincronizzare. Le prove su dati ridotti
+# vanno in runs_small/, per non sporcare i log dei run veri.
+if TENSORBOARD:
+    radice_log = "runs_small" if PICCOLO else "runs"
+    CARTELLA_LOG = PROGETTO / radice_log / SOTTOCARTELLA
+else:
+    CARTELLA_LOG = None
+
 NOME = f"{MODELLO}_{FEATURE_SET}"
 
 
@@ -195,6 +210,8 @@ def main():
     print(f"Batch          : {BATCH}")
     print(f"Epoche massime : {MAX_EPOCHE}")
     print(f"Risultati in   : {CARTELLA_RISULTATI.relative_to(PROGETTO)}/")
+    if CARTELLA_LOG is not None:
+        print(f"Log TensorBoard: {CARTELLA_LOG.relative_to(PROGETTO)}/")
     print("=" * 60)
     print()
 
@@ -229,6 +246,13 @@ def main():
 
         modello = costruisci_modello(n_input)
 
+        # Una sottocartella di log per ogni seme: TensorBoard le mostra come
+        # curve distinte, sovrapponibili nello stesso grafico.
+        if CARTELLA_LOG is not None:
+            logdir = str(CARTELLA_LOG / f"{NOME}_seme{seme}")
+        else:
+            logdir = None
+
         storia = addestra(
             modello, dati,
             batch=BATCH,
@@ -237,6 +261,7 @@ def main():
             pazienza=PAZIENZA,
             ottimizzatore=OTTIMIZZATORE,
             seme=seme,
+            logdir=logdir,
         )
 
         # --- valutazione finale sul TEST set -------------------------------

@@ -12,6 +12,24 @@ Il file contiene DUE stack di ottimizzazione:
 Il default e' sempre il comportamento 2014, quindi i run gia' fatti
 restano riproducibili.
 
+TENSORBOARD
+-----------
+Passando logdir="runs/nome_della_run" l'addestramento scrive anche i log
+per TensorBoard. Con logdir=None (default) non succede nulla e il
+comportamento e' identico a prima.
+
+Si registrano:
+  - a OGNI epoca: perdita di train e validation, AUC, learning rate,
+    minuti impiegati, norma dei gradienti strato per strato
+  - ogni EPOCHE_DETTAGLI epoche: istogrammi dei pesi e delle attivazioni
+
+Per guardarli:
+    tensorboard --logdir=runs
+    (e poi il browser su localhost:6006)
+
+Da remoto serve un tunnel:
+    ssh -L 6006:localhost:6006 utente@macchina
+
 Uso tipico (da notebook):
 
     from data import prepara_dati
@@ -24,9 +42,10 @@ Uso tipico (da notebook):
     m = rete_profonda(n_input=21)
     storia = addestra(m, dati)
 
-    # stack moderno
+    # stack moderno, con log per TensorBoard
     m = rete_profonda(n_input=21, attivazione="relu")
-    storia = addestra(m, dati, ottimizzatore="adamw")
+    storia = addestra(m, dati, ottimizzatore="adamw",
+                      logdir="runs/deep_low_moderno")
 """
 
 import copy
@@ -85,8 +104,19 @@ MAX_EPOCHE = 1000            # limite di sicurezza
 PAZIENZA = 10                # epoche senza miglioramento prima di fermarsi
 MIGLIORAMENTO_MINIMO = 1e-5  # miglioramento relativo che conta come progresso
 
-# Per le prove sul dataset piccolo passa alla funzione valori ridotti,
-# per esempio epoche_rampa=5, max_epoche=15, batch=1000.
+# ---------------------------------------------------------------------------
+# PARAMETRI di TensorBoard
+# ---------------------------------------------------------------------------
+
+# Ogni quante epoche registrare istogrammi di pesi e attivazioni.
+# Sono la parte costosa: un istogramma di 90.000 pesi per strato pesa molto
+# piu' di un singolo numero. Ogni 10 epoche si vede benissimo l'evoluzione
+# senza rallentare l'addestramento.
+EPOCHE_DETTAGLI = 10
+
+# Quanti eventi usare per gli istogrammi delle attivazioni. Non servono
+# tutti: la distribuzione si stima benissimo con qualche migliaio.
+N_EVENTI_ATTIVAZIONI = 2000
 
 # ---------------------------------------------------------------------------
 
@@ -117,7 +147,7 @@ def crea_ottimizzatore(modello, nome, lr, weight_decay):
         ottimizzatore = torch.optim.AdamW(
             modello.parameters(),
             lr=lr,
-            betas=(BETA1, BETA2),
+            betas=(BETA1, BETA2), # le betas sono delle costanti di Adam, non vanno confuse con il momentum di SGD
             weight_decay=weight_decay,
         )
         # Scheduler "a plateau": guarda la perdita di validation e dimezza
@@ -137,6 +167,72 @@ def crea_ottimizzatore(modello, nome, lr, weight_decay):
     raise ValueError("ottimizzatore deve essere 'sgd' o 'adamw'")
 
 
+# ---------------------------------------------------------------------------
+# FUNZIONI DI SUPPORTO PER TENSORBOARD
+# ---------------------------------------------------------------------------
+
+def norme_gradienti(modello):
+    """
+    Restituisce la norma del gradiente di ogni strato nascosto, piu' quella
+    dello strato di uscita.
+
+    A cosa serve: il gradiente viene calcolato all'uscita e propagato
+    all'indietro. Se attraversando gli strati si rimpicciolisce troppo, i
+    primi strati ricevono un segnale debolissimo e imparano lentamente.
+    Confrontare la norma al primo e all'ultimo strato mostra direttamente
+    questo fenomeno, che e' esattamente cio' che l'inizializzazione di He
+    e' progettata a evitare.
+
+    Va chiamata DOPO backward() e PRIMA di step(): dopo l'aggiornamento i
+    gradienti sono ancora li', ma li azzeriamo al giro successivo.
+    """
+    norme = {}
+    for k, strato in enumerate(modello.nascosti, start=1):
+        if strato.weight.grad is not None:
+            norme[f"strato{k}"] = strato.weight.grad.norm().item()
+    if modello.uscita.weight.grad is not None:
+        norme["uscita"] = modello.uscita.weight.grad.norm().item()
+    return norme
+
+
+def registra_dettagli(writer, modello, X_campione, epoca):
+    """
+    Scrive su TensorBoard gli istogrammi dei pesi e delle attivazioni.
+
+    PESI: la distribuzione dei pesi di ogni strato. All'inizio e' quella
+    dell'inizializzazione (gaussiana stretta con tanh, piu' larga con He);
+    durante l'addestramento si deforma, e il confronto fra i due stack
+    mostra quanto i pesi si muovono davvero.
+
+    ATTIVAZIONI: la distribuzione dei valori in uscita da ogni strato
+    nascosto, su un campione fisso di eventi. Serve a vedere se il segnale
+    si attenua scendendo nella rete. Con la ReLU registriamo anche la
+    frazione di unita' esattamente a zero (la "sparsita'"): e' una
+    caratteristica della ReLU che la tanh non ha.
+
+    Il modello deve essere gia' in modalita' eval quando si chiama.
+    """
+    # --- pesi -------------------------------------------------------------
+    for k, strato in enumerate(modello.nascosti, start=1):
+        writer.add_histogram(f"pesi/strato{k}", strato.weight, epoca)
+    writer.add_histogram("pesi/uscita", modello.uscita.weight, epoca)
+
+    # --- attivazioni ------------------------------------------------------
+    with torch.no_grad():
+        _, attivazioni = modello(X_campione, restituisci_attivazioni=True)
+
+    for k, a in enumerate(attivazioni, start=1):
+        writer.add_histogram(f"attivazioni/strato{k}", a, epoca)
+        # Ampiezza tipica: un solo numero, comodo da confrontare fra stack.
+        writer.add_scalar(f"ampiezza_attivazioni/strato{k}",
+                          a.std().item(), epoca)
+        # Frazione di unita' spente (significativa solo con ReLU).
+        frazione_zeri = (a == 0).float().mean().item()
+        writer.add_scalar(f"sparsita/strato{k}", frazione_zeri, epoca)
+
+
+# ---------------------------------------------------------------------------
+
 def addestra(modello, dati,
              batch=BATCH,
              lr_iniziale=None,
@@ -147,6 +243,8 @@ def addestra(modello, dati,
              ottimizzatore="sgd",
              dispositivo=None,
              seme=None,
+             logdir=None,
+             epoche_dettagli=EPOCHE_DETTAGLI,
              silenzioso=False):
     """
     Addestra il modello e restituisce lo storico delle metriche.
@@ -156,6 +254,9 @@ def addestra(modello, dati,
 
     lr_iniziale e weight_decay, se lasciati a None, prendono il valore
     adatto all'ottimizzatore scelto.
+
+    logdir: se e' un percorso, scrive i log per TensorBoard in quella
+    cartella. Se e' None (default) non scrive nulla.
     """
 
     # --- valori di default che dipendono dall'ottimizzatore ----------------
@@ -181,12 +282,29 @@ def addestra(modello, dati,
 
     modello = modello.to(dispositivo)
 
+    # --- TensorBoard: si prepara solo se richiesto -------------------------
+    writer = None
+    X_campione = None
+    if logdir is not None:
+        from torch.utils.tensorboard import SummaryWriter
+        writer = SummaryWriter(logdir)
+        # Campione FISSO di eventi per gli istogrammi delle attivazioni:
+        # sempre gli stessi, cosi' le differenze fra epoche vengono dalla
+        # rete e non dal campione.
+        campione = np.ascontiguousarray(X_val[:N_EVENTI_ATTIVAZIONI])
+        X_campione = torch.from_numpy(campione).to(dispositivo)
+
     perdita_fn = nn.BCEWithLogitsLoss()
     opt, scheduler = crea_ottimizzatore(modello, ottimizzatore,
                                         lr_iniziale, weight_decay)
 
     n = len(X_train)
     lr = lr_iniziale
+
+    # Indice del primo evento dell'ultimo batch dell'epoca: solo su quel
+    # batch calcoliamo le norme dei gradienti, per non pagare il conto ad
+    # ogni aggiornamento.
+    ultimo_batch = ((n - batch) // batch) * batch
 
     storia = {"perdita_train": [], "perdita_val": [], "auc_val": [],
               "lr": [], "momentum": []}
@@ -198,11 +316,16 @@ def addestra(modello, dati,
     if not silenzioso:
         print(f"Addestramento su {dispositivo}, {n:,} eventi, batch da {batch}")
         print(f"Ottimizzatore: {ottimizzatore}, lr iniziale {lr_iniziale}")
-        print(f"{n // batch:,} aggiornamenti per epoca\n")
+        print(f"{n // batch:,} aggiornamenti per epoca")
+        if writer is not None:
+            print(f"Log TensorBoard in {logdir}")
+        print()
 
     t0 = time.time()
 
     for epoca in range(max_epoche):
+
+        t_epoca = time.time()
 
         # --- momentum ------------------------------------------------------
         if ottimizzatore == "sgd":
@@ -220,6 +343,7 @@ def addestra(modello, dati,
         modello.train()
         somma_perdita = 0.0
         n_batch = 0
+        norme = None
 
         ordine = torch.randperm(n, device=dispositivo)
 
@@ -232,6 +356,12 @@ def addestra(modello, dati,
             logit = modello(xb)                # passaggio in avanti
             perdita = perdita_fn(logit, yb)    # quanto sbaglia
             perdita.backward()                 # calcola i gradienti
+
+            # Le norme dei gradienti vanno lette qui: dopo backward, prima
+            # che il giro successivo li azzeri. Solo sull'ultimo batch.
+            if writer is not None and i == ultimo_batch:
+                norme = norme_gradienti(modello)
+
             opt.step()                         # aggiorna i pesi
 
             # --- learning rate: scende a OGNI batch, non a ogni epoca ------
@@ -257,11 +387,34 @@ def addestra(modello, dati,
         # Leggiamo il lr davvero in uso, qualunque sia lo stack.
         lr = opt.param_groups[0]["lr"]
 
+        minuti_epoca = (time.time() - t_epoca) / 60
+
         storia["perdita_train"].append(perdita_train)
         storia["perdita_val"].append(perdita_val)
         storia["auc_val"].append(auc_val)
         storia["lr"].append(lr)
         storia["momentum"].append(momentum)
+
+        # --- scrittura su TensorBoard --------------------------------------
+        if writer is not None:
+            # I nomi con la barra creano dei raggruppamenti nell'interfaccia:
+            # tutto cio' che inizia con "perdita/" finisce nello stesso
+            # pannello, e le due curve si vedono sovrapposte.
+            writer.add_scalar("perdita/train", perdita_train, epoca)
+            writer.add_scalar("perdita/validation", perdita_val, epoca)
+            writer.add_scalar("auc/validation", auc_val, epoca)
+            writer.add_scalar("ottimizzazione/learning_rate", lr, epoca)
+            writer.add_scalar("ottimizzazione/momentum", momentum, epoca)
+            writer.add_scalar("tempo/minuti_per_epoca", minuti_epoca, epoca)
+
+            if norme is not None:
+                for nome_strato, valore in norme.items():
+                    writer.add_scalar(f"gradienti/{nome_strato}", valore, epoca)
+
+            # Gli istogrammi solo ogni tanto: sono la parte costosa.
+            # modello.eval() e' gia' stato messo da valuta().
+            if epoca % epoche_dettagli == 0:
+                registra_dettagli(writer, modello, X_campione, epoca)
 
         if not silenzioso:
             print(f"epoca {epoca + 1:4d} | train {perdita_train:.5f} | "
@@ -298,6 +451,10 @@ def addestra(modello, dati,
 
     # Ripristiniamo i pesi dell'epoca migliore.
     modello.load_state_dict(migliori_pesi)
+
+    if writer is not None:
+        writer.close()          # svuota il buffer: senza, le ultime epoche
+                                # potrebbero non finire su disco
 
     if not silenzioso:
         print(f"\nMigliore perdita di validation: {migliore_perdita:.5f}")

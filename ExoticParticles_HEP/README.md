@@ -25,93 +25,208 @@ Ogni evento è descritto da due gruppi di variabili:
 
 La pratica consolidata in fisica delle alte energie era di alimentare classificatori *shallow* (reti a un solo strato nascosto, boosted decision trees) con le feature high-level, perché i modelli poco profondi non riescono a ricostruirle da soli.
 
-Il risultato centrale del paper è che **una rete profonda sulle sole feature low-level raggiunge le prestazioni di una rete profonda su tutte le feature** (AUC 0.880 contro 0.885), mentre la rete shallow sulle low-level resta molto indietro (0.733). La rete profonda, in altre parole, **scopre da sola l'informazione contenuta nelle masse invarianti**, rendendo superflua la costruzione manuale delle feature.
+Il risultato centrale del paper è che **una rete profonda sulle sole feature low-level raggiunge le prestazioni di una rete profonda su tutte le feature** (AUC 0.880 contro 0.885), mentre la rete shallow sulle low-level resta molto indietro (0.733).
 
 | Tecnica | Low-level | High-level | Complete |
 |---|---|---|---|
 | BDT | 0.73 | 0.78 | 0.81 |
 | NN shallow | 0.733 | 0.777 | 0.816 |
-| DN (5 layer) | **0.880** | 0.800 | **0.885** |
+| DN profonda | **0.880** | 0.800 | **0.885** |
 
 *AUC sul benchmark HIGGS, Tabella I del paper.*
 
-## 3. Obiettivo di riproduzione
+## 3. Riproduzione
 
-Riprodurre la griglia completa `{shallow, deep} × {low-level, high-level, complete}` sul dataset HIGGS, con la configurazione originale:
+### 3.1 Architettura
 
-- MLP a 5 strati nascosti da 300 unità, attivazione `tanh`
-- inizializzazione normale con $\sigma$ = 0.1 (primo strato), 0.05 (strati intermedi), 0.001 (output)
-- SGD con learning rate 0.05, decadimento esponenziale per batch, momentum in rampa lineare 0.9 → 0.99 sulle prime 200 epoche
-- weight decay $10^{-5}$, mini-batch di 100 eventi, early stopping su validation set
-- valutazione via ROC / AUC su 500.000 eventi di test, media su più inizializzazioni casuali
+Il paper parla di "rete a 5 strati". Il conteggio dei parametri riportato nell'articolo (279.901 per la rete profonda con 28 input) torna solo **contando lo strato di uscita fra i cinque**, cioè con 4 strati nascosti. Verificato ricalcolando i parametri; il codice usa questa interpretazione.
 
-## 4. Estensioni proposte
+- **Rete profonda**: 4 strati nascosti da 300 unità, attivazione `tanh` → 279.901 parametri (28 input)
+- **Rete shallow**: 1 strato nascosto da 10.000 unità → 300.001 parametri (28 input)
+- Uscita: un singolo logit, senza sigmoide (applicata dentro `BCEWithLogitsLoss`, numericamente più stabile)
 
-### 4.1 Confronto tra stack metodologici (2014 vs oggi)
+### 3.2 Stack di ottimizzazione originale
 
-Il paper fotografa lo stato dell'arte del 2014. A parità di architettura e di dati, si confronta lo stack originale con quello moderno:
+- inizializzazione normale con $\sigma$ = 0.1 (primo strato), 0.05 (strati intermedi), 0.001 (uscita)
+- SGD, learning rate iniziale 0.05, diviso per 1.0000002 **a ogni batch** (non a ogni epoca)
+- momentum in rampa lineare 0.9 → 0.99 sulle prime 200 epoche
+- weight decay $10^{-5}$, mini-batch di 100 eventi
+- early stopping con pazienza 10, attivo solo dopo che il momentum ha raggiunto il valore massimo
+
+### 3.3 Griglia
+
+Le sei configurazioni del paper — `{deep, shallow} × {low, high, complete}` — con 5 semi ciascuna.
+
+## 4. Estensioni
+
+### 4.1 Confronto tra stack di ottimizzazione (2014 vs oggi)
+
+A parità di **architettura, dati e numero di eventi**, si confronta lo stack originale con uno moderno:
 
 | | Stack 2014 | Stack moderno |
 |---|---|---|
-| Attivazione | `tanh` | `ReLU` / `GELU` |
-| Ottimizzatore | SGD + momentum | Adam / AdamW |
-| Regolarizzazione | weight decay | dropout + weight decay |
-| Normalizzazione | solo degli input | batch normalization |
-| Arresto | early stopping | early stopping + LR scheduling |
+| Attivazione | `tanh` | `ReLU` |
+| Inizializzazione | gaussiana con $\sigma$ fissate a mano | He, $\sigma = \sqrt{2/n_{\text{in}}}$ |
+| Ottimizzatore | SGD + rampa di momentum | AdamW (lr $10^{-3}$, wd $10^{-4}$) |
+| Learning rate | decadimento esponenziale per batch | `ReduceLROnPlateau` (fattore 0.5, pazienza 3) |
+| Arresto | early stopping (dopo la rampa) | early stopping |
 
-La domanda: **quanto del divario shallow/deep osservato nel 2014 dipende dall'architettura profonda e quanto dalle difficoltà di ottimizzazione dell'epoca?** Il paper attribuisce esplicitamente il problema alla diffusione del gradiente con attivazioni saturanti; se lo stack moderno migliora la rete shallow più della profonda, parte del risultato originale è imputabile alla tecnica di training e non solo alla capacità rappresentativa.
+Attivazione e ottimizzatore non sono scelti indipendentemente: si sceglie *lo stack*. Una $\sigma$ tarata sulla `tanh` è sbagliata per la `ReLU` e viceversa, quindi l'inizializzazione segue automaticamente l'attivazione.
 
-### 4.2 Learning curve: AUC in funzione di $N_{\text{train}}$
+**La domanda non è quale stack raggiunga l'AUC più alta.** Con dati e capacità fissati ci si attende che entrambi arrivino più o meno allo stesso punto. La quantità interessante è la **velocità di convergenza**: quante epoche servono per arrivare a una data AUC. Il paper riporta tempi di training dell'ordine delle settimane di GPU; misurare quanto di quel costo dipendesse dalla tecnica dell'epoca, e non dal problema, è un risultato presentabile e onesto.
 
-Il paper addestra su un numero fisso di eventi (2.6M) e non indaga la dipendenza dalla dimensione del campione. L'estensione misura l'AUC in funzione di $N_{\text{train}}$ (da $10^4$ a $2.6 \times 10^6$) separatamente sui tre set di feature.
+Una scelta metodologica importante riguarda l'early stopping. Nello stack 2014 l'arresto è bloccato fino alla fine della rampa di momentum (epoca 200): prima di allora una stasi non significa convergenza. Nello stack moderno la rampa non esiste, quindi il vincolo va rimosso — se restasse, la rete non potrebbe fermarsi prima dell'epoca 200 anche avendo già convergito, e proprio la velocità di convergenza è ciò che si vuole misurare.
 
-L'ipotesi da verificare: la "scoperta automatica delle feature" è un fenomeno che **richiede dati**. Ci si attende che a piccolo $N_{\text{train}}$ le feature high-level restino vantaggiose — la conoscenza fisica incorporata a mano compensa la scarsità di esempi — e che il vantaggio si annulli solo oltre una certa soglia. Individuare quella soglia quantifica il valore informativo del dominio expertise in termini di eventi simulati equivalenti, che è una domanda di interesse pratico: generare eventi Monte Carlo costa tempo di calcolo.
+Lo stack moderno viene addestrato con la **sola architettura profonda**, sui tre set di feature: le difficoltà di ottimizzazione che ReLU e He risolvono riguardano la propagazione del segnale attraverso più strati, e su una rete a un solo strato nascosto il confronto sarebbe poco informativo.
 
-### 4.3 Linear probing delle rappresentazioni interne
+**Passaggio da iperparametri a prescrizioni.** Il filo conduttore del confronto è che lo stack moderno sostituisce numeri scelti a mano con regole derivate: la $\sigma$ di inizializzazione non si sceglie, si calcola dal numero di ingressi; il learning rate non segue una curva fissata in anticipo, ma reagisce alla perdita di validation. Questo comporta che nello stack moderno il validation set influenza il training e non solo la selezione finale — cosa che l'early stopping fa comunque in entrambi gli stack, ma vale la pena dichiararla.
+
+### 4.2 Linear probing delle rappresentazioni interne
 
 Il paper afferma che la rete profonda "scopre" le feature high-level, ma lo argomenta **indirettamente**, per via delle prestazioni: la rete sulle low-level fa bene quanto quella su tutto, quindi *deve* aver ricostruito l'informazione. La Supplementary Table 4 mostra separatamente che una rete può essere addestrata a *calcolare* le high-level dalle low-level, ma si tratta di una rete diversa, addestrata a quello scopo.
 
-Il **linear probing** verifica la tesi in modo diretto. La procedura:
+Il **linear probing** verifica la tesi in modo diretto:
 
 1. Si addestra la rete profonda sul task di classificazione con le sole feature low-level.
-2. Si congelano i pesi e si estraggono le attivazioni di ciascuno strato nascosto $h^{(1)}, \dots, h^{(5)}$ su un campione di eventi.
-3. Per ogni strato e per ciascuna delle 7 feature high-level si addestra una **regressione lineare** (il "probe") dalle attivazioni al valore della feature.
-4. Si misura $R^2$ (o MSE) del probe.
+2. Si congelano i pesi e si estraggono le attivazioni di ciascuno strato nascosto su un campione di eventi del validation set.
+3. Per ogni strato si addestra una **regressione ridge** dalle attivazioni (300 numeri) alle 7 masse invarianti.
+4. Si misura $R^2$ su eventi che il probe non ha visto.
 
-L'idea è che un classificatore lineare non può creare informazione, solo leggerla. Se una regressione lineare sulle attivazioni dello strato $k$ predice accuratamente $m_{bb}$, allora quella quantità è **linearmente decodificabile** dalla rappresentazione interna: la rete l'ha effettivamente costruita e resa esplicita, non è un artefatto della metrica di classificazione.
+Il vincolo della linearità è il punto centrale: un modello lineare non può creare informazione, solo leggerla. Se una regressione lineare sulle attivazioni predice accuratamente $m_{bb}$, quella quantità è **linearmente decodificabile** dalla rappresentazione interna — la rete l'ha costruita e resa esplicita.
+
+**I riferimenti sono indispensabili.** Una combinazione lineare di 300 quantità può fittare parecchio anche senza che ci sia nulla di interessante. Si calcolano quindi sempre:
+
+- **probe sulle variabili grezze in ingresso** — il livello zero: quanto è già decodificabile senza rete;
+- **probe su una rete non addestrata**, stessa architettura, pesi casuali — quanto si guadagna per la sola proiezione in 300 dimensioni attraverso una non-linearità.
+
+Il risultato è la **differenza** rispetto a questi due, e l'andamento con la profondità.
 
 Cosa si può leggere dai risultati:
 
-- **profilo per profondità** — se $R^2$ cresce con lo strato, si osserva la costruzione progressiva della feature; se satura presto, la ricostruzione avviene nei primi strati e i successivi fanno altro.
-- **profilo per feature** — non tutte le masse invarianti hanno lo stesso ruolo. È ragionevole attendersi che $m_{WWbb}$ e $m_{Wbb}$, che codificano direttamente le masse ipotizzate $H^0$ e $H^\pm$, siano meglio rappresentate di $m_{\ell\nu}$, che assume lo stesso valore in segnale e fondo e ha quindi potere discriminante nullo. La rete dovrebbe ricostruire ciò che le serve, non ciò che è fisicamente definibile.
-- **controllo** — lo stesso probe applicato alla rete shallow e a una rete non addestrata (pesi casuali) fornisce il riferimento: quanta parte della decodificabilità è dovuta all'apprendimento e quanta alla semplice proiezione casuale in dimensione alta.
+- **profilo per profondità** — se $R^2$ cresce con lo strato, si osserva la costruzione progressiva; se satura presto, la ricostruzione avviene nei primi strati e i successivi fanno altro.
+- **profilo per feature** — non tutte le masse hanno lo stesso ruolo. È ragionevole attendersi che $m_{WWbb}$ e $m_{Wbb}$, che codificano le masse ipotizzate $H^0$ e $H^\pm$, siano meglio rappresentate di $m_{\ell\nu}$, che assume lo stesso valore in segnale e fondo e ha quindi potere discriminante nullo. La rete dovrebbe ricostruire ciò che le serve, non ciò che è fisicamente definibile.
+- **confronto con il BDT** — la curva di apprendimento del BDT (§6) mostra dall'esterno la stessa difficoltà che il probing misura dall'interno.
 
-Il linear probing collega dunque il risultato del paper a una domanda di interpretabilità, e trasforma un'affermazione sulle prestazioni in una misura sulle rappresentazioni.
+Parametri: ridge con $\alpha = 1$ (le 300 attivazioni sono fortemente correlate, una regressione non regolarizzata sarebbe instabile), 200.000 eventi per stimare i coefficienti e 50.000 per misurare, presi dal **validation set** — il test resta intatto.
 
-## 5. Dati
+## 5. Configurazioni
 
-Dataset **HIGGS** dallo UCI Machine Learning Repository: 11.000.000 eventi, 29 colonne (label, 21 low-level, 7 high-level). Gli ultimi 500.000 eventi costituiscono il test set secondo la convenzione standard.
+Nove in tutto:
 
-## 6. Struttura del repository
+| Stack | Architettura | Feature set | Semi |
+|---|---|---|---|
+| 2014 | deep, shallow | low, high, complete | 5 |
+| moderno | deep | low, high, complete | 1 |
+
+Il seme unico dello stack moderno è **uno dei cinque** usati per la baseline: così i due stack vedono gli stessi dati nello stesso ordine, e la differenza non è attribuibile allo split o all'ordine dei batch. Non ai pesi iniziali, che sono necessariamente diversi — è proprio la modifica sotto esame.
+
+## 6. Riferimento BDT
+
+Implementato con `HistGradientBoostingClassifier` di scikit-learn. Con 2.6M eventi l'early stopping interno non scatta mai (la validazione interna è così grande che anche miglioramenti minuscoli risultano significativi), quindi il valore riportato dipenderebbe dal numero di alberi scelto — che il paper non specifica. Invece di sceglierlo arbitrariamente si misura **tutta la curva** AUC contro numero di alberi, fino a 3000, e si mostra dove cade il valore del paper.
+
+Risultato: high e complete saturano entro ~500 alberi, mentre **low è ancora in salita a 3000**. È la firma della difficoltà del problema sulle variabili grezze: il BDT sta approssimando a scalini una struttura — le masse invarianti — che nelle altre configurazioni è servita già pronta. Lo stesso fenomeno che il linear probing va a guardare dall'interno della rete.
+
+I valori ottenuti sono sistematicamente **sopra** quelli del paper (≈0.764 / 0.794 / 0.84 contro 0.73 / 0.78 / 0.81), verosimilmente per la maggiore qualità dell'implementazione moderna rispetto a TMVA. Il riferimento è quindi più severo, non più indulgente.
+
+## 7. Dati e preprocessing
+
+Dataset **HIGGS** dallo UCI Machine Learning Repository: 11.000.000 eventi, 29 colonne (label, 21 low-level, 7 high-level).
+
+**Suddivisione**, come nel paper: 2.600.000 eventi di training (i primi del file), 500.000 di validation, 500.000 di test (gli ultimi, per convenzione standard del dataset). I restanti 7.4M non vengono usati: usare più dati renderebbe il confronto con il paper non interpretabile.
+
+**Standardizzazione**, secondo lo schema dei Methods:
+
+- colonne **strettamente positive** (pT, energia mancante, masse invarianti): $x / \bar{x}$, media 1. Non si centra a zero perché per quelle grandezze lo zero è un estremo fisico del dominio, non un valore centrale.
+- **tutte le altre** ($\eta$, $\phi$, b-tag): $(x - \bar{x}) / \sigma$, media 0 e deviazione 1.
+
+Le statistiche si calcolano **solo sul training set** e si applicano tal quali a validation e test.
+
+Due osservazioni emerse dalla verifica:
+
+- Il dataset UCI è già stato normalizzato dagli autori (medie ≈1 per le positive, ≈0 per le angolari), ma ricalcolare le statistiche non è ridondante: gli autori hanno normalizzato sugli 11M completi, qui si usano i primi 2.6M, e sulle masse invarianti — che hanno code lunghe — la differenza arriva al 5% ($m_{\ell\nu}$ ha media 1.05).
+- I **b-tag** hanno media ≈1 nel file UCI, quindi gli autori li hanno trattati come variabili positive. Qui il loro minimo è 0, la regola empirica li classifica come "da standardizzare" e finiscono centrati a zero. Su variabili discrete la differenza è irrilevante, ma è il caso in cui la regola "minimo > 0" incontra il suo limite. Verificato che la classificazione delle colonne coincide con l'attesa fisica su tutti e tre i feature set (6, 7 e 13 colonne positive).
+
+## 8. Struttura del repository
 
 ```
 .
-├── data/           # dataset grezzo e array preprocessati (non versionati)
-├── src/            # preparazione dati, modelli, training, valutazione
-├── notebooks/      # esplorazione, esperimenti, figure
-├── results/        # metriche, curve ROC, checkpoint
+├── data/
+│   ├── processed/          # 11M eventi, array .npy (non versionati)
+│   └── processed_small/    # 100k eventi, per prove e ottimizzazione
+├── src/
+│   ├── features.py         # nomi e indici delle colonne
+│   ├── prepare_data.py     # da CSV grezzo ad array .npy
+│   ├── check_data.py       # controllo di sanità (una tantum)
+│   ├── data.py             # divisione, standardizzazione, scelta feature
+│   ├── models.py           # le due architetture, i due stack
+│   ├── train.py            # ciclo di addestramento, i due ottimizzatori
+│   ├── evaluate.py         # curve ROC, AUC, tabelle
+│   ├── esperimenti.py      # lancia una configurazione su più semi
+│   ├── bdt.py              # riferimento BDT
+│   ├── bdt_curva.py        # AUC in funzione del numero di alberi
+│   └── probing.py          # linear probing delle attivazioni
+├── notebooks/              # esplorazione e figure
+├── results/
+│   ├── riproduzione/       # stack 2014
+│   ├── moderno/            # stack moderno
+│   ├── bdt/
+│   └── bdt_auc/
+├── results_small/          # stessa struttura, per le prove
+├── runs/                   # log TensorBoard (non versionati)
+└── runs_small/
 ```
 
-## 7. Deviazioni consapevoli dal paper
+## 9. Uso
 
-Elencate qui e discusse nella relazione:
+```bash
+# una configurazione, tutti i semi
+python src/esperimenti.py deep low
+
+# solo alcuni semi (per parallelizzare in tmux)
+python src/esperimenti.py deep low 0 1
+python src/esperimenti.py deep low 2 3 4
+
+# stack moderno
+python src/esperimenti.py deep low moderno 0
+
+# prova rapida su dati ridotti
+python src/esperimenti.py deep low moderno small 0
+
+# rigenera il riepilogo dopo che tutti i processi sono finiti
+python src/esperimenti.py deep low
+
+# linear probing su un modello già addestrato
+python src/probing.py deep low moderno 0
+
+# monitoraggio
+tensorboard --logdir=runs
+```
+
+L'argomento `small` cambia **insieme** cartella dei dati, cartella dei risultati, cartella dei log e parametri ridotti: è un unico interruttore, per non poter lanciare un training vero con i dati di prova o viceversa.
+
+Ogni seme già completato viene saltato, quindi si può rilanciare dopo un'interruzione senza perdere lavoro.
+
+## 10. Deviazioni consapevoli dal paper
 
 - **Standardizzazione** — il paper calcola media e deviazione standard sull'intero insieme train+test. Qui le statistiche sono stimate esclusivamente sul training set, per evitare data leakage.
-- **BDT** — il paper usa TMVA; qui si impiega un'implementazione equivalente in scikit-learn, quindi i valori assoluti non sono direttamente confrontabili.
-- **Budget computazionale** — numero di inizializzazioni casuali ed epoche di training possono essere ridotti rispetto all'originale; ogni riduzione è documentata insieme ai risultati.
+- **BDT** — il paper usa TMVA; qui `HistGradientBoostingClassifier`, quindi i valori assoluti non sono direttamente confrontabili (e risultano migliori).
+- **Numero di semi** — 5 per la riproduzione, 1 per lo stack moderno. Con un solo seme la deviazione standard non è definita e viene riportata come tale, non come zero.
+- **Nessuna cross-validation** — con 500.000 eventi di validation e altrettanti di test le stime di AUC sono già molto precise; la variabilità rilevante è quella fra inizializzazioni, catturata dai semi.
+- **Selezione dell'epoca** — i pesi finali sono quelli dell'epoca a perdita di validation minima. Questo introduce un lieve bias ottimistico sull'AUC di test. Nota: perdita minima e AUC massima non cadono necessariamente sulla stessa epoca; il criterio è comunque identico per i due stack, quindi il confronto resta pulito.
+- **Ottimizzazione degli iperparametri** — solo per lo stack moderno, su `processed_small`, limitata a learning rate e weight decay. L'architettura resta ai valori del paper: ottimizzarla renderebbe non interpretabile il confronto fra stack, e l'architettura ottima dipende dalla quantità di dati, quindi non si trasferirebbe dalla scala ridotta. Che il solo stack moderno venga ottimizzato è uno sbilanciamento voluto: si confrontano due *pratiche* complete, non due ottimizzatori nudi.
+- **Budget computazionale** — numero di semi ed epoche possono essere ridotti; ogni riduzione è documentata insieme ai risultati.
 - **Pre-training** — il pre-training con autoencoder non è riprodotto: il paper stesso riporta che non produceva miglioramenti apprezzabili.
 
-## 8. Riferimenti
+## 11. Punti critici del benchmark
+
+Da discutere nella presentazione, indipendentemente dai risultati:
+
+- il rapporto segnale/fondo è 50/50 per costruzione, molto lontano dalle proporzioni reali di un esperimento;
+- la simulazione usa DELPHES, una simulazione veloce del rivelatore, non una simulazione completa;
+- non sono incluse incertezze sistematiche, che in un'analisi reale dominano il risultato.
+
+## 12. Riferimenti
 
 1. P. Baldi, P. Sadowski, D. Whiteson, *Searching for Exotic Particles in High-Energy Physics with Deep Learning*, Nature Communications 5, 4308 (2014). arXiv:1402.4735
-2. Dataset HIGGS, UCI Machine Learning Repository.
+2. K. He et al., *Delving Deep into Rectifiers*, ICCV 2015. arXiv:1502.01852
+3. Dataset HIGGS, UCI Machine Learning Repository.
