@@ -11,12 +11,24 @@ L'architettura NON viene ottimizzata: resta ai valori del paper. Due motivi.
 Il primo e' che il confronto fra stack ha senso solo a parita' di modello:
 se lo stack moderno avesse anche una rete diversa, non si saprebbe piu' a
 quale delle due modifiche attribuire la differenza. Il secondo e' che la
-dimensione ottima di una rete dipende da quanti dati ha: quella trovata su
-processed_small non varrebbe sui 2.6 milioni di eventi veri.
+dimensione ottima di una rete dipende da quanti dati ha, quindi quella
+trovata su un sottoinsieme non varrebbe sui 2.6 milioni di eventi veri.
 
 Learning rate e weight decay invece si trasferiscono ragionevolmente bene
-fra scale diverse, ed e' per questo che ha senso cercarli sul dataset
-ridotto.
+fra scale diverse, ed e' per questo che ha senso cercarli su un
+sottoinsieme.
+
+SU QUANTI DATI
+--------------
+Non su processed_small (100.000 eventi), ma su un sottoinsieme del dataset
+vero. Con 100.000 eventi il rapporto fra parametri e dati e' 4:1 e ogni
+configurazione, senza eccezioni, va in overfitting: la ricerca finisce per
+scegliere in un regime che non somiglia a quello dei training finali. Con
+un milione il rapporto e' 1:3.5 e il problema si attenua molto.
+
+Il batch e' quello del paper (100). E' importante: il learning rate ottimo
+dipende fortemente dal batch, e cercarlo con un batch diverso da quello
+dei training veri produrrebbe un valore non trasferibile.
 
 COSA MINIMIZZA
 --------------
@@ -40,9 +52,11 @@ USO
 
     python src/ottimizza.py              # deep low, 25 tentativi
     python src/ottimizza.py high         # deep high
-    python src/ottimizza.py 40           # 40 tentativi
+    python src/ottimizza.py 30           # 30 tentativi
 
-Produce results_small/ottimizzazione_<feature_set>.json
+Produce results_small/ottimizzazione_<feature_set>_<n>k_batch<b>.json
+Il nome contiene la configurazione, cosi' ricerche fatte con dati o batch
+diversi restano tutte su disco e sono confrontabili fra loro.
 """
 
 import json
@@ -88,13 +102,12 @@ SPAZIO = {
 # configurazioni viene dagli iperparametri e non dall'inizializzazione.
 SEME = 0
 
-# Parametri del dataset ridotto (gli stessi di esperimenti.py in modalita'
-# "small", perche' e' li' che si cerca).
-N_TRAIN = 70_000
-N_VAL = 15_000
-N_TEST = 15_000
-BATCH = 1000
-MAX_EPOCHE = 30
+# Parametri della ricerca. Vedi la nota "SU QUANTI DATI" in cima al file.
+N_TRAIN = 1_000_000
+N_VAL = 200_000
+N_TEST = 100_000        # non usato: la ricerca non tocca mai il test set
+BATCH = 100             # lo stesso dei training finali, deve esserlo
+MAX_EPOCHE = 60         # piu' dati significa piu' epoche per convergere
 PAZIENZA = 8
 
 # I primi tentativi TPE li fa a caso, per farsi un'idea dello spazio prima
@@ -109,7 +122,7 @@ TENSORBOARD = True
 
 
 PROGETTO = Path(__file__).resolve().parent.parent
-CARTELLA_DATI = PROGETTO / "data" / "processed_small"
+CARTELLA_DATI = PROGETTO / "data" / "processed"
 CARTELLA_RISULTATI = PROGETTO / "results_small"
 CARTELLA_LOG = PROGETTO / "runs_small" / "ottimizzazione"
 
@@ -216,7 +229,7 @@ def main():
     print("=" * 64)
     print(f"Ottimizzazione iperparametri - deep {FEATURE_SET}, stack moderno")
     print(f"Tentativi        : {N_TENTATIVI} (di cui {TENTATIVI_CASUALI} casuali)")
-    print(f"Eventi train     : {N_TRAIN:,}  (dataset ridotto)")
+    print(f"Eventi train     : {N_TRAIN:,}  (batch {BATCH})")
     print(f"Epoche massime   : {MAX_EPOCHE}")
     print(f"Seme fisso       : {SEME}")
     print("=" * 64)
@@ -271,6 +284,7 @@ def main():
         "n_tentativi_casuali": TENTATIVI_CASUALI,
         "seme": SEME,
         "n_train": N_TRAIN,
+        "n_val": N_VAL,
         "batch": BATCH,
         "max_epoche": MAX_EPOCHE,
         "minuti_totali": round(minuti_totali, 1),
@@ -282,7 +296,11 @@ def main():
         "tentativi": tentativi,
     }
 
-    percorso = CARTELLA_RISULTATI / f"ottimizzazione_{FEATURE_SET}.json"
+    # Il nome contiene la configurazione: cosi' ricerche fatte con dati o
+    # batch diversi non si sovrascrivono mai, e restano confrontabili.
+    etichetta = f"{N_TRAIN // 1000}k_batch{BATCH}"
+    percorso = CARTELLA_RISULTATI / f"ottimizzazione_{FEATURE_SET}_{etichetta}.json"
+
     with open(percorso, "w") as f:
         json.dump(uscita, f, indent=2)
 
@@ -313,8 +331,8 @@ def main():
     print(f"Salvato in {percorso.name}")
     print("=" * 64)
     print()
-    print("ATTENZIONE: questi valori sono stati trovati su un dataset ridotto.")
-    print("Vanno riportati come tali quando si discutono i risultati finali.")
+    print(f"NOTA: valori trovati su {N_TRAIN:,} eventi; i training finali ne usano")
+    print("2.600.000. Il learning rate ottimo tende a scendere al crescere dei dati.")
 
 
 if __name__ == "__main__":

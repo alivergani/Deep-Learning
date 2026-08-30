@@ -1,0 +1,49 @@
+Caricamento dati...
+feature set : low  (21 colonne)
+  train : 1,000,000 eventi
+  val   :   200,000 eventi
+  test  :   100,000 eventi
+  colonne riscalate a media 1 (positive) : 6
+  colonne standardizzate a media 0       : 15
+
+================================================================
+Ottimizzazione iperparametri - deep low, stack moderno
+Tentativi        : 30 (di cui 10 casuali)
+Eventi train     : 1,000,000  (batch 100)
+Epoche massime   : 60
+Seme fisso       : 0
+================================================================
+
+[  1/30] lr = 2.39e-04, weight_decay = 5.36e-04
+          AUC = 0.7856  (epoca 12 di 20, 15.0 min)
+[  2/30] lr = 3.56e-04, weight_decay = 2.03e-03
+          AUC = 0.7956  (epoca 12 di 20, 19.9 min)
+[  3/30] lr = 2.54e-03, weight_decay = 5.87e-05
+          AUC = 0.8093  (epoca 26 di 34, 93.0 min)
+[  4/30] lr = 4.26e-04, weight_decay = 4.34e-03
+          AUC = 0.7982  (epoca 12 di 20, 23.5 min)
+[  5/30] lr = 7.13e-03, weight_decay = 1.53e-04
+          AUC = 0.7878  (epoca 57 di 60, 184.7 min)
+[  6/30] lr = 1.76e-03, weight_decay = 9.85e-03
+          AUC = 0.8339  (epoca 36 di 44, 127.7 min)
+[  7/30] lr = 9.56e-03, weight_decay = 8.28e-04
+          AUC = 0.7923  (epoca 60 di 60, 186.9 min)
+[  8/30] lr = 1.17e-04, weight_decay = 4.35e-06
+          AUC = 0.7737  (epoca 15 di 23, 15.7 min)
+[  9/30] lr = 1.58e-04, weight_decay = 1.02e-04
+          AUC = 0.7759  (epoca 11 di 19, 12.9 min)
+[ 10/30] lr = 9.83e-04, weight_decay = 2.17e-05
+          AUC = 0.8031  (epoca 12 di 20, 39.5 min)
+[ 11/30] lr = 2.88e-03, weight_decay = 9.81e-03
+          AUC = 0.8251  (epoca 56 di 60, 186.8 min)
+[ 12/30] lr = 1.04e-03, weight_decay = 1.96e-06
+          AUC = 0.8085  (epoca 18 di 26, 59.2 min)
+[ 13/30] lr = 4.33e-03, weight_decay = 8.00e-06
+          AUC = 0.8040  (epoca 47 di 55, 165.1 min)
+[ 14/30] lr = 9.65e-04, weight_decay = 8.99e-03
+          AUC = 0.8298  (epoca 33 di 41, 90.0 min)
+[ 15/30] lr = 1.50e-03, weight_decay = 4.14e-04
+          AUC = 0.8079  (epoca 18 di 26, 65.0 min)
+[ 16/30] lr = 6.15e-04, weight_decay = 2.27e-03
+          AUC = 0.8017  (epoca 11 di 19, 30.8 min)
+[ 17/30] lr = 5.33e-03, weight_decay = 9.93e-03
