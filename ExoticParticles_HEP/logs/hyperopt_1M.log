@@ -61,3 +61,5 @@ Seme fisso       : 0
 [ 23/30] lr = 1.45e-03, weight_decay = 3.30e-05
           AUC = 0.8065  (epoca 20 di 28, 70.7 min)
 [ 24/30] lr = 6.08e-03, weight_decay = 1.04e-03
+          AUC = 0.8058  (epoca 56 di 60, 184.8 min)
+[ 25/30] lr = 2.37e-03, weight_decay = 3.22e-03
