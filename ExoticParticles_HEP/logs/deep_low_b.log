@@ -1,0 +1,680 @@
+============================================================
+Configurazione : deep_low
+Stack          : 2014  (tanh + sgd)
+Semi           : [2, 3, 4, 2]
+Eventi train   : 2,600,000
+Batch          : 100
+Epoche massime : 300
+Risultati in   : results/riproduzione/
+Log TensorBoard: runs/riproduzione/
+============================================================
+
+feature set : low  (21 colonne)
+  train : 2,600,000 eventi
+  val   :   500,000 eventi
+  test  :   500,000 eventi
+  colonne riscalate a media 1 (positive) : 6
+  colonne standardizzate a media 0       : 15
+
+
+------------------------------------------------------------
+[seme 2] inizio
+------------------------------------------------------------
+Addestramento su cuda, 2,600,000 eventi, batch da 100
+Ottimizzatore: sgd, lr iniziale 0.05
+26,000 aggiornamenti per epoca
+Log TensorBoard in /home/luca/Desktop/Code/ali/Deep-Learning/ExoticParticles_HEP/runs/riproduzione/deep_low_seme2
+
+epoca    1 | train 0.62830 | val 0.59956 | AUC 0.7374 | lr 0.049741 | mom 0.900 | 0.3 min
+epoca    2 | train 0.59380 | val 0.57990 | AUC 0.7593 | lr 0.049483 | mom 0.900 | 0.6 min
+epoca    3 | train 0.57865 | val 0.57164 | AUC 0.7690 | lr 0.049226 | mom 0.901 | 0.9 min
+epoca    4 | train 0.56988 | val 0.57015 | AUC 0.7699 | lr 0.048971 | mom 0.901 | 1.2 min
+epoca    5 | train 0.56391 | val 0.55877 | AUC 0.7831 | lr 0.048717 | mom 0.902 | 1.5 min
+epoca    6 | train 0.55946 | val 0.55618 | AUC 0.7844 | lr 0.048464 | mom 0.902 | 1.8 min
+epoca    7 | train 0.55640 | val 0.56630 | AUC 0.7827 | lr 0.048213 | mom 0.903 | 2.1 min
+epoca    8 | train 0.55383 | val 0.55446 | AUC 0.7867 | lr 0.047963 | mom 0.903 | 2.4 min
+epoca    9 | train 0.55125 | val 0.55194 | AUC 0.7908 | lr 0.047714 | mom 0.904 | 2.7 min
+epoca   10 | train 0.54913 | val 0.55051 | AUC 0.7923 | lr 0.047466 | mom 0.904 | 2.9 min
+epoca   11 | train 0.54661 | val 0.54730 | AUC 0.7942 | lr 0.047220 | mom 0.904 | 3.2 min
+epoca   12 | train 0.54511 | val 0.54635 | AUC 0.7946 | lr 0.046975 | mom 0.905 | 3.5 min
+epoca   13 | train 0.54298 | val 0.54254 | AUC 0.7993 | lr 0.046732 | mom 0.905 | 3.8 min
+epoca   14 | train 0.54086 | val 0.53941 | AUC 0.7997 | lr 0.046489 | mom 0.906 | 4.1 min
+epoca   15 | train 0.53880 | val 0.55130 | AUC 0.8025 | lr 0.046248 | mom 0.906 | 4.3 min
+epoca   16 | train 0.53723 | val 0.54205 | AUC 0.8006 | lr 0.046008 | mom 0.907 | 4.6 min
+epoca   17 | train 0.53581 | val 0.53555 | AUC 0.8035 | lr 0.045770 | mom 0.907 | 4.9 min
+epoca   18 | train 0.53459 | val 0.53495 | AUC 0.8042 | lr 0.045532 | mom 0.908 | 5.2 min
+epoca   19 | train 0.53350 | val 0.53160 | AUC 0.8078 | lr 0.045296 | mom 0.908 | 5.5 min
+epoca   20 | train 0.53232 | val 0.53625 | AUC 0.8038 | lr 0.045061 | mom 0.909 | 5.8 min
+epoca   21 | train 0.53085 | val 0.53279 | AUC 0.8071 | lr 0.044828 | mom 0.909 | 6.0 min
+epoca   22 | train 0.52989 | val 0.53147 | AUC 0.8068 | lr 0.044595 | mom 0.909 | 6.3 min
+epoca   23 | train 0.52919 | val 0.53499 | AUC 0.8059 | lr 0.044364 | mom 0.910 | 6.6 min
+epoca   24 | train 0.52835 | val 0.52755 | AUC 0.8110 | lr 0.044134 | mom 0.910 | 6.9 min
+epoca   25 | train 0.52757 | val 0.53551 | AUC 0.8111 | lr 0.043905 | mom 0.911 | 7.2 min
+epoca   26 | train 0.52648 | val 0.52681 | AUC 0.8118 | lr 0.043677 | mom 0.911 | 7.4 min
+epoca   27 | train 0.52574 | val 0.52857 | AUC 0.8119 | lr 0.043451 | mom 0.912 | 7.7 min
+epoca   28 | train 0.52502 | val 0.52412 | AUC 0.8135 | lr 0.043225 | mom 0.912 | 8.0 min
+epoca   29 | train 0.52445 | val 0.52703 | AUC 0.8119 | lr 0.043001 | mom 0.913 | 8.3 min
+epoca   30 | train 0.52368 | val 0.52598 | AUC 0.8133 | lr 0.042778 | mom 0.913 | 8.6 min
+epoca   31 | train 0.52322 | val 0.52951 | AUC 0.8098 | lr 0.042556 | mom 0.913 | 8.9 min
+epoca   32 | train 0.52298 | val 0.53170 | AUC 0.8108 | lr 0.042335 | mom 0.914 | 9.1 min
+epoca   33 | train 0.52184 | val 0.52929 | AUC 0.8120 | lr 0.042116 | mom 0.914 | 9.4 min
+epoca   34 | train 0.52181 | val 0.52687 | AUC 0.8148 | lr 0.041897 | mom 0.915 | 9.7 min
+epoca   35 | train 0.52123 | val 0.52204 | AUC 0.8152 | lr 0.041680 | mom 0.915 | 10.0 min
+epoca   36 | train 0.52105 | val 0.52477 | AUC 0.8162 | lr 0.041464 | mom 0.916 | 10.3 min
+epoca   37 | train 0.52023 | val 0.52666 | AUC 0.8130 | lr 0.041249 | mom 0.916 | 10.6 min
+epoca   38 | train 0.51986 | val 0.52102 | AUC 0.8174 | lr 0.041035 | mom 0.917 | 10.9 min
+epoca   39 | train 0.51980 | val 0.52238 | AUC 0.8149 | lr 0.040822 | mom 0.917 | 11.2 min
+epoca   40 | train 0.51937 | val 0.52177 | AUC 0.8160 | lr 0.040610 | mom 0.918 | 11.5 min
+epoca   41 | train 0.51874 | val 0.52463 | AUC 0.8194 | lr 0.040400 | mom 0.918 | 11.7 min
+epoca   42 | train 0.51860 | val 0.51916 | AUC 0.8186 | lr 0.040190 | mom 0.918 | 12.0 min
+epoca   43 | train 0.51807 | val 0.52689 | AUC 0.8159 | lr 0.039982 | mom 0.919 | 12.3 min
+epoca   44 | train 0.51798 | val 0.52719 | AUC 0.8149 | lr 0.039774 | mom 0.919 | 12.6 min
+epoca   45 | train 0.51761 | val 0.52529 | AUC 0.8180 | lr 0.039568 | mom 0.920 | 12.9 min
+epoca   46 | train 0.51735 | val 0.51604 | AUC 0.8206 | lr 0.039363 | mom 0.920 | 13.2 min
+epoca   47 | train 0.51703 | val 0.51690 | AUC 0.8196 | lr 0.039159 | mom 0.921 | 13.5 min
+epoca   48 | train 0.51674 | val 0.52095 | AUC 0.8183 | lr 0.038956 | mom 0.921 | 13.8 min
+epoca   49 | train 0.51669 | val 0.52043 | AUC 0.8195 | lr 0.038754 | mom 0.922 | 14.1 min
+epoca   50 | train 0.51643 | val 0.51948 | AUC 0.8177 | lr 0.038553 | mom 0.922 | 14.4 min
+epoca   51 | train 0.51642 | val 0.51912 | AUC 0.8184 | lr 0.038353 | mom 0.922 | 14.7 min
+epoca   52 | train 0.51626 | val 0.51963 | AUC 0.8207 | lr 0.038154 | mom 0.923 | 14.9 min
+epoca   53 | train 0.51604 | val 0.51542 | AUC 0.8216 | lr 0.037956 | mom 0.923 | 15.2 min
+epoca   54 | train 0.51581 | val 0.52614 | AUC 0.8179 | lr 0.037759 | mom 0.924 | 15.5 min
+epoca   55 | train 0.51552 | val 0.52142 | AUC 0.8164 | lr 0.037563 | mom 0.924 | 15.8 min
+epoca   56 | train 0.51540 | val 0.51903 | AUC 0.8198 | lr 0.037368 | mom 0.925 | 16.1 min
+epoca   57 | train 0.51532 | val 0.52477 | AUC 0.8206 | lr 0.037174 | mom 0.925 | 16.4 min
+epoca   58 | train 0.51501 | val 0.51679 | AUC 0.8198 | lr 0.036982 | mom 0.926 | 16.7 min
+epoca   59 | train 0.51511 | val 0.51927 | AUC 0.8196 | lr 0.036790 | mom 0.926 | 16.9 min
+epoca   60 | train 0.51503 | val 0.51821 | AUC 0.8195 | lr 0.036599 | mom 0.927 | 17.2 min
+epoca   61 | train 0.51492 | val 0.51702 | AUC 0.8197 | lr 0.036409 | mom 0.927 | 17.5 min
+epoca   62 | train 0.51478 | val 0.52209 | AUC 0.8160 | lr 0.036220 | mom 0.927 | 17.8 min
+epoca   63 | train 0.51462 | val 0.52086 | AUC 0.8175 | lr 0.036033 | mom 0.928 | 18.1 min
+epoca   64 | train 0.51440 | val 0.52046 | AUC 0.8198 | lr 0.035846 | mom 0.928 | 18.4 min
+epoca   65 | train 0.51411 | val 0.51991 | AUC 0.8194 | lr 0.035660 | mom 0.929 | 18.7 min
+epoca   66 | train 0.51422 | val 0.52200 | AUC 0.8186 | lr 0.035475 | mom 0.929 | 19.0 min
+epoca   67 | train 0.51435 | val 0.52239 | AUC 0.8168 | lr 0.035291 | mom 0.930 | 19.2 min
+epoca   68 | train 0.51416 | val 0.51518 | AUC 0.8215 | lr 0.035108 | mom 0.930 | 19.5 min
+epoca   69 | train 0.51391 | val 0.51648 | AUC 0.8213 | lr 0.034926 | mom 0.931 | 19.8 min
+epoca   70 | train 0.51391 | val 0.51578 | AUC 0.8212 | lr 0.034745 | mom 0.931 | 20.1 min
+epoca   71 | train 0.51392 | val 0.52357 | AUC 0.8219 | lr 0.034564 | mom 0.931 | 20.4 min
+epoca   72 | train 0.51376 | val 0.51657 | AUC 0.8203 | lr 0.034385 | mom 0.932 | 20.7 min
+epoca   73 | train 0.51372 | val 0.51571 | AUC 0.8224 | lr 0.034207 | mom 0.932 | 21.0 min
+epoca   74 | train 0.51363 | val 0.51672 | AUC 0.8208 | lr 0.034029 | mom 0.933 | 21.3 min
+epoca   75 | train 0.51375 | val 0.52274 | AUC 0.8193 | lr 0.033853 | mom 0.933 | 21.5 min
+epoca   76 | train 0.51354 | val 0.51841 | AUC 0.8187 | lr 0.033677 | mom 0.934 | 21.8 min
+epoca   77 | train 0.51340 | val 0.51467 | AUC 0.8217 | lr 0.033503 | mom 0.934 | 22.1 min
+epoca   78 | train 0.51318 | val 0.51714 | AUC 0.8213 | lr 0.033329 | mom 0.935 | 22.4 min
+epoca   79 | train 0.51321 | val 0.52000 | AUC 0.8209 | lr 0.033156 | mom 0.935 | 22.7 min
+epoca   80 | train 0.51319 | val 0.51899 | AUC 0.8216 | lr 0.032984 | mom 0.936 | 23.0 min
+epoca   81 | train 0.51322 | val 0.51575 | AUC 0.8221 | lr 0.032813 | mom 0.936 | 23.3 min
+epoca   82 | train 0.51295 | val 0.52229 | AUC 0.8231 | lr 0.032643 | mom 0.936 | 23.6 min
+epoca   83 | train 0.51274 | val 0.51337 | AUC 0.8235 | lr 0.032473 | mom 0.937 | 23.9 min
+epoca   84 | train 0.51298 | val 0.51595 | AUC 0.8204 | lr 0.032305 | mom 0.937 | 24.2 min
+epoca   85 | train 0.51297 | val 0.51730 | AUC 0.8222 | lr 0.032137 | mom 0.938 | 24.4 min
+epoca   86 | train 0.51292 | val 0.51501 | AUC 0.8229 | lr 0.031971 | mom 0.938 | 24.7 min
+epoca   87 | train 0.51285 | val 0.51668 | AUC 0.8216 | lr 0.031805 | mom 0.939 | 25.0 min
+epoca   88 | train 0.51301 | val 0.51862 | AUC 0.8194 | lr 0.031640 | mom 0.939 | 25.3 min
+epoca   89 | train 0.51337 | val 0.52561 | AUC 0.8204 | lr 0.031476 | mom 0.940 | 25.6 min
+epoca   90 | train 0.51304 | val 0.51436 | AUC 0.8217 | lr 0.031313 | mom 0.940 | 25.9 min
+epoca   91 | train 0.51297 | val 0.51583 | AUC 0.8218 | lr 0.031150 | mom 0.941 | 26.2 min
+epoca   92 | train 0.51296 | val 0.51415 | AUC 0.8225 | lr 0.030989 | mom 0.941 | 26.5 min
+epoca   93 | train 0.51303 | val 0.51653 | AUC 0.8198 | lr 0.030828 | mom 0.941 | 26.8 min
+epoca   94 | train 0.51299 | val 0.51976 | AUC 0.8171 | lr 0.030668 | mom 0.942 | 27.0 min
+epoca   95 | train 0.51301 | val 0.51628 | AUC 0.8208 | lr 0.030509 | mom 0.942 | 27.3 min
+epoca   96 | train 0.51295 | val 0.52575 | AUC 0.8187 | lr 0.030351 | mom 0.943 | 27.6 min
+epoca   97 | train 0.51315 | val 0.51826 | AUC 0.8221 | lr 0.030193 | mom 0.943 | 27.9 min
+epoca   98 | train 0.51303 | val 0.51623 | AUC 0.8226 | lr 0.030037 | mom 0.944 | 28.2 min
+epoca   99 | train 0.51312 | val 0.51689 | AUC 0.8215 | lr 0.029881 | mom 0.944 | 28.5 min
+epoca  100 | train 0.51301 | val 0.51568 | AUC 0.8212 | lr 0.029726 | mom 0.945 | 28.8 min
+epoca  101 | train 0.51298 | val 0.51540 | AUC 0.8215 | lr 0.029572 | mom 0.945 | 29.1 min
+epoca  102 | train 0.51292 | val 0.51494 | AUC 0.8209 | lr 0.029418 | mom 0.945 | 29.4 min
+epoca  103 | train 0.51318 | val 0.51551 | AUC 0.8210 | lr 0.029266 | mom 0.946 | 29.6 min
+epoca  104 | train 0.51344 | val 0.52230 | AUC 0.8185 | lr 0.029114 | mom 0.946 | 29.9 min
+epoca  105 | train 0.51329 | val 0.51779 | AUC 0.8222 | lr 0.028963 | mom 0.947 | 30.2 min
+epoca  106 | train 0.51365 | val 0.51740 | AUC 0.8223 | lr 0.028813 | mom 0.947 | 30.5 min
+epoca  107 | train 0.51328 | val 0.51470 | AUC 0.8225 | lr 0.028663 | mom 0.948 | 30.8 min
+epoca  108 | train 0.51378 | val 0.51614 | AUC 0.8208 | lr 0.028515 | mom 0.948 | 31.1 min
+epoca  109 | train 0.51354 | val 0.51871 | AUC 0.8241 | lr 0.028367 | mom 0.949 | 31.4 min
+epoca  110 | train 0.51383 | val 0.51601 | AUC 0.8212 | lr 0.028220 | mom 0.949 | 31.7 min
+epoca  111 | train 0.51378 | val 0.51671 | AUC 0.8233 | lr 0.028073 | mom 0.950 | 32.0 min
+epoca  112 | train 0.51395 | val 0.51510 | AUC 0.8216 | lr 0.027928 | mom 0.950 | 32.3 min
+epoca  113 | train 0.51407 | val 0.52235 | AUC 0.8212 | lr 0.027783 | mom 0.950 | 32.5 min
+epoca  114 | train 0.51376 | val 0.51799 | AUC 0.8208 | lr 0.027639 | mom 0.951 | 32.8 min
+epoca  115 | train 0.51426 | val 0.51519 | AUC 0.8217 | lr 0.027496 | mom 0.951 | 33.1 min
+epoca  116 | train 0.51428 | val 0.52315 | AUC 0.8223 | lr 0.027353 | mom 0.952 | 33.4 min
+epoca  117 | train 0.51471 | val 0.51510 | AUC 0.8219 | lr 0.027211 | mom 0.952 | 33.7 min
+epoca  118 | train 0.51489 | val 0.52454 | AUC 0.8207 | lr 0.027070 | mom 0.953 | 34.0 min
+epoca  119 | train 0.51464 | val 0.51544 | AUC 0.8225 | lr 0.026930 | mom 0.953 | 34.3 min
+epoca  120 | train 0.51500 | val 0.52048 | AUC 0.8176 | lr 0.026790 | mom 0.954 | 34.5 min
+epoca  121 | train 0.51515 | val 0.51478 | AUC 0.8229 | lr 0.026651 | mom 0.954 | 34.8 min
+epoca  122 | train 0.51490 | val 0.52211 | AUC 0.8181 | lr 0.026513 | mom 0.954 | 35.1 min
+epoca  123 | train 0.51509 | val 0.51915 | AUC 0.8207 | lr 0.026375 | mom 0.955 | 35.4 min
+epoca  124 | train 0.51516 | val 0.51700 | AUC 0.8217 | lr 0.026238 | mom 0.955 | 35.7 min
+epoca  125 | train 0.51551 | val 0.51521 | AUC 0.8217 | lr 0.026102 | mom 0.956 | 36.0 min
+epoca  126 | train 0.51547 | val 0.52002 | AUC 0.8175 | lr 0.025967 | mom 0.956 | 36.3 min
+epoca  127 | train 0.51584 | val 0.52370 | AUC 0.8172 | lr 0.025832 | mom 0.957 | 36.6 min
+epoca  128 | train 0.51577 | val 0.51508 | AUC 0.8218 | lr 0.025698 | mom 0.957 | 36.9 min
+epoca  129 | train 0.51613 | val 0.52705 | AUC 0.8202 | lr 0.025565 | mom 0.958 | 37.1 min
+epoca  130 | train 0.51657 | val 0.54108 | AUC 0.8163 | lr 0.025432 | mom 0.958 | 37.4 min
+epoca  131 | train 0.51670 | val 0.51823 | AUC 0.8191 | lr 0.025300 | mom 0.959 | 37.7 min
+epoca  132 | train 0.51675 | val 0.52046 | AUC 0.8167 | lr 0.025169 | mom 0.959 | 38.0 min
+epoca  133 | train 0.51713 | val 0.51866 | AUC 0.8206 | lr 0.025039 | mom 0.959 | 38.3 min
+epoca  134 | train 0.51753 | val 0.52307 | AUC 0.8193 | lr 0.024909 | mom 0.960 | 38.6 min
+epoca  135 | train 0.51754 | val 0.52249 | AUC 0.8196 | lr 0.024780 | mom 0.960 | 38.9 min
+epoca  136 | train 0.51794 | val 0.52408 | AUC 0.8180 | lr 0.024651 | mom 0.961 | 39.2 min
+epoca  137 | train 0.51804 | val 0.52798 | AUC 0.8158 | lr 0.024523 | mom 0.961 | 39.5 min
+epoca  138 | train 0.51861 | val 0.53244 | AUC 0.8160 | lr 0.024396 | mom 0.962 | 39.7 min
+epoca  139 | train 0.51857 | val 0.52760 | AUC 0.8205 | lr 0.024270 | mom 0.962 | 40.0 min
+epoca  140 | train 0.51878 | val 0.52414 | AUC 0.8190 | lr 0.024144 | mom 0.963 | 40.3 min
+epoca  141 | train 0.51870 | val 0.51854 | AUC 0.8195 | lr 0.024018 | mom 0.963 | 40.6 min
+epoca  142 | train 0.51941 | val 0.51955 | AUC 0.8181 | lr 0.023894 | mom 0.963 | 40.9 min
+epoca  143 | train 0.51972 | val 0.52368 | AUC 0.8206 | lr 0.023770 | mom 0.964 | 41.2 min
+epoca  144 | train 0.52024 | val 0.52549 | AUC 0.8186 | lr 0.023647 | mom 0.964 | 41.5 min
+epoca  145 | train 0.52033 | val 0.53258 | AUC 0.8144 | lr 0.023524 | mom 0.965 | 41.8 min
+epoca  146 | train 0.52072 | val 0.52448 | AUC 0.8132 | lr 0.023402 | mom 0.965 | 42.1 min
+epoca  147 | train 0.52058 | val 0.52343 | AUC 0.8145 | lr 0.023281 | mom 0.966 | 42.3 min
+epoca  148 | train 0.52158 | val 0.52397 | AUC 0.8160 | lr 0.023160 | mom 0.966 | 42.6 min
+epoca  149 | train 0.52185 | val 0.52346 | AUC 0.8171 | lr 0.023040 | mom 0.967 | 42.9 min
+epoca  150 | train 0.52203 | val 0.52709 | AUC 0.8182 | lr 0.022920 | mom 0.967 | 43.2 min
+epoca  151 | train 0.52262 | val 0.54076 | AUC 0.8089 | lr 0.022801 | mom 0.968 | 43.5 min
+epoca  152 | train 0.52279 | val 0.52800 | AUC 0.8138 | lr 0.022683 | mom 0.968 | 43.8 min
+epoca  153 | train 0.52364 | val 0.53087 | AUC 0.8143 | lr 0.022566 | mom 0.968 | 44.1 min
+epoca  154 | train 0.52468 | val 0.52431 | AUC 0.8156 | lr 0.022448 | mom 0.969 | 44.4 min
+epoca  155 | train 0.52437 | val 0.52389 | AUC 0.8153 | lr 0.022332 | mom 0.969 | 44.7 min
+epoca  156 | train 0.52517 | val 0.52249 | AUC 0.8173 | lr 0.022216 | mom 0.970 | 44.9 min
+epoca  157 | train 0.52523 | val 0.52688 | AUC 0.8127 | lr 0.022101 | mom 0.970 | 45.2 min
+epoca  158 | train 0.52596 | val 0.52291 | AUC 0.8166 | lr 0.021986 | mom 0.971 | 45.5 min
+epoca  159 | train 0.52666 | val 0.52319 | AUC 0.8145 | lr 0.021872 | mom 0.971 | 45.8 min
+epoca  160 | train 0.52747 | val 0.52537 | AUC 0.8170 | lr 0.021759 | mom 0.972 | 46.1 min
+epoca  161 | train 0.52822 | val 0.53526 | AUC 0.8114 | lr 0.021646 | mom 0.972 | 46.4 min
+epoca  162 | train 0.52894 | val 0.52632 | AUC 0.8116 | lr 0.021534 | mom 0.972 | 46.7 min
+epoca  163 | train 0.52985 | val 0.52155 | AUC 0.8173 | lr 0.021422 | mom 0.973 | 46.9 min
+epoca  164 | train 0.53060 | val 0.53017 | AUC 0.8169 | lr 0.021311 | mom 0.973 | 47.2 min
+epoca  165 | train 0.53212 | val 0.53158 | AUC 0.8081 | lr 0.021200 | mom 0.974 | 47.5 min
+epoca  166 | train 0.53263 | val 0.52817 | AUC 0.8123 | lr 0.021091 | mom 0.974 | 47.8 min
+epoca  167 | train 0.53416 | val 0.52922 | AUC 0.8128 | lr 0.020981 | mom 0.975 | 48.1 min
+epoca  168 | train 0.53482 | val 0.53253 | AUC 0.8105 | lr 0.020872 | mom 0.975 | 48.4 min
+epoca  169 | train 0.53688 | val 0.53047 | AUC 0.8082 | lr 0.020764 | mom 0.976 | 48.7 min
+epoca  170 | train 0.53830 | val 0.53544 | AUC 0.8049 | lr 0.020656 | mom 0.976 | 49.0 min
+epoca  171 | train 0.54012 | val 0.55404 | AUC 0.8059 | lr 0.020549 | mom 0.977 | 49.3 min
+epoca  172 | train 0.54138 | val 0.52857 | AUC 0.8115 | lr 0.020443 | mom 0.977 | 49.5 min
+epoca  173 | train 0.54580 | val 0.54676 | AUC 0.7957 | lr 0.020337 | mom 0.977 | 49.8 min
+epoca  174 | train 0.55007 | val 0.58688 | AUC 0.7952 | lr 0.020231 | mom 0.978 | 50.1 min
+epoca  175 | train 0.55733 | val 0.55573 | AUC 0.7836 | lr 0.020126 | mom 0.978 | 50.4 min
+epoca  176 | train 0.57251 | val 0.67168 | AUC 0.7667 | lr 0.020022 | mom 0.979 | 50.7 min
+epoca  177 | train 0.68568 | val 0.62530 | AUC 0.7336 | lr 0.019918 | mom 0.979 | 51.0 min
+epoca  178 | train 0.77039 | val 0.90134 | AUC 0.6250 | lr 0.019815 | mom 0.980 | 51.3 min
+epoca  179 | train 0.80028 | val 0.76337 | AUC 0.6920 | lr 0.019712 | mom 0.980 | 51.6 min
+epoca  180 | train 0.81971 | val 0.73259 | AUC 0.7035 | lr 0.019610 | mom 0.981 | 51.9 min
+epoca  181 | train 0.83370 | val 1.33551 | AUC 0.6714 | lr 0.019508 | mom 0.981 | 52.2 min
+epoca  182 | train 0.84924 | val 0.81250 | AUC 0.6762 | lr 0.019407 | mom 0.981 | 52.4 min
+epoca  183 | train 0.85081 | val 0.81313 | AUC 0.6367 | lr 0.019306 | mom 0.982 | 52.7 min
+epoca  184 | train 0.86568 | val 1.21050 | AUC 0.6786 | lr 0.019206 | mom 0.982 | 53.0 min
+epoca  185 | train 0.90832 | val 1.01308 | AUC 0.6581 | lr 0.019106 | mom 0.983 | 53.3 min
+epoca  186 | train 0.92318 | val 0.84532 | AUC 0.6399 | lr 0.019007 | mom 0.983 | 53.6 min
+epoca  187 | train 0.90671 | val 0.82996 | AUC 0.6883 | lr 0.018909 | mom 0.984 | 53.9 min
+epoca  188 | train 0.90741 | val 0.99771 | AUC 0.6773 | lr 0.018811 | mom 0.984 | 54.2 min
+epoca  189 | train 0.91306 | val 0.88263 | AUC 0.6838 | lr 0.018713 | mom 0.985 | 54.5 min
+epoca  190 | train 0.93963 | val 0.67556 | AUC 0.6610 | lr 0.018616 | mom 0.985 | 54.8 min
+epoca  191 | train 1.00222 | val 0.90391 | AUC 0.6884 | lr 0.018519 | mom 0.986 | 55.0 min
+epoca  192 | train 0.99271 | val 0.94668 | AUC 0.6752 | lr 0.018423 | mom 0.986 | 55.3 min
+epoca  193 | train 1.01366 | val 0.92908 | AUC 0.6817 | lr 0.018328 | mom 0.986 | 55.6 min
+epoca  194 | train 1.05750 | val 0.75525 | AUC 0.6537 | lr 0.018233 | mom 0.987 | 55.9 min
+epoca  195 | train 1.10301 | val 0.78592 | AUC 0.6523 | lr 0.018138 | mom 0.987 | 56.2 min
+epoca  196 | train 1.24519 | val 0.75094 | AUC 0.4873 | lr 0.018044 | mom 0.988 | 56.5 min
+epoca  197 | train 1.09886 | val 0.71466 | AUC 0.6358 | lr 0.017951 | mom 0.988 | 56.8 min
+epoca  198 | train 1.10106 | val 2.00232 | AUC 0.6394 | lr 0.017857 | mom 0.989 | 57.1 min
+epoca  199 | train 1.12144 | val 0.73136 | AUC 0.6280 | lr 0.017765 | mom 0.989 | 57.4 min
+epoca  200 | train 1.42043 | val 2.59663 | AUC 0.5384 | lr 0.017673 | mom 0.990 | 57.7 min
+epoca  201 | train 1.43931 | val 0.72461 | AUC 0.5477 | lr 0.017581 | mom 0.990 | 57.9 min
+
+Fermato: nessun miglioramento da 10 epoche.
+
+Migliore perdita di validation: 0.51337
+Epoche eseguite: 201
+Tempo totale: 57.9 min
+
+[seme 2] TEST: perdita 0.51253, AUC 0.8245
+
+------------------------------------------------------------
+[seme 3] inizio
+------------------------------------------------------------
+Addestramento su cuda, 2,600,000 eventi, batch da 100
+Ottimizzatore: sgd, lr iniziale 0.05
+26,000 aggiornamenti per epoca
+Log TensorBoard in /home/luca/Desktop/Code/ali/Deep-Learning/ExoticParticles_HEP/runs/riproduzione/deep_low_seme3
+
+epoca    1 | train 0.63059 | val 0.60291 | AUC 0.7338 | lr 0.049741 | mom 0.900 | 0.3 min
+epoca    2 | train 0.59542 | val 0.58283 | AUC 0.7594 | lr 0.049483 | mom 0.900 | 0.6 min
+epoca    3 | train 0.57965 | val 0.57781 | AUC 0.7678 | lr 0.049226 | mom 0.901 | 0.9 min
+epoca    4 | train 0.57083 | val 0.56420 | AUC 0.7767 | lr 0.048971 | mom 0.901 | 1.2 min
+epoca    5 | train 0.56472 | val 0.56693 | AUC 0.7780 | lr 0.048717 | mom 0.902 | 1.4 min
+epoca    6 | train 0.55993 | val 0.55719 | AUC 0.7834 | lr 0.048464 | mom 0.902 | 1.7 min
+epoca    7 | train 0.55665 | val 0.55502 | AUC 0.7862 | lr 0.048213 | mom 0.903 | 2.0 min
+epoca    8 | train 0.55342 | val 0.55439 | AUC 0.7876 | lr 0.047963 | mom 0.903 | 2.3 min
+epoca    9 | train 0.55073 | val 0.54936 | AUC 0.7908 | lr 0.047714 | mom 0.904 | 2.6 min
+epoca   10 | train 0.54834 | val 0.54717 | AUC 0.7939 | lr 0.047466 | mom 0.904 | 2.9 min
+epoca   11 | train 0.54578 | val 0.54338 | AUC 0.7972 | lr 0.047220 | mom 0.904 | 3.2 min
+epoca   12 | train 0.54303 | val 0.54721 | AUC 0.7990 | lr 0.046975 | mom 0.905 | 3.5 min
+epoca   13 | train 0.54121 | val 0.54179 | AUC 0.7982 | lr 0.046732 | mom 0.905 | 3.8 min
+epoca   14 | train 0.53974 | val 0.54043 | AUC 0.8013 | lr 0.046489 | mom 0.906 | 4.0 min
+epoca   15 | train 0.53846 | val 0.54482 | AUC 0.8000 | lr 0.046248 | mom 0.906 | 4.3 min
+epoca   16 | train 0.53701 | val 0.53705 | AUC 0.8026 | lr 0.046008 | mom 0.907 | 4.6 min
+epoca   17 | train 0.53595 | val 0.54034 | AUC 0.8010 | lr 0.045770 | mom 0.907 | 4.9 min
+epoca   18 | train 0.53481 | val 0.54934 | AUC 0.8024 | lr 0.045532 | mom 0.908 | 5.2 min
+epoca   19 | train 0.53358 | val 0.54753 | AUC 0.8059 | lr 0.045296 | mom 0.908 | 5.5 min
+epoca   20 | train 0.53258 | val 0.53546 | AUC 0.8070 | lr 0.045061 | mom 0.909 | 5.8 min
+epoca   21 | train 0.53158 | val 0.53023 | AUC 0.8089 | lr 0.044828 | mom 0.909 | 6.1 min
+epoca   22 | train 0.53103 | val 0.53750 | AUC 0.8046 | lr 0.044595 | mom 0.909 | 6.4 min
+epoca   23 | train 0.53011 | val 0.53379 | AUC 0.8060 | lr 0.044364 | mom 0.910 | 6.6 min
+epoca   24 | train 0.52945 | val 0.53556 | AUC 0.8069 | lr 0.044134 | mom 0.910 | 6.9 min
+epoca   25 | train 0.52883 | val 0.53093 | AUC 0.8088 | lr 0.043905 | mom 0.911 | 7.2 min
+epoca   26 | train 0.52843 | val 0.53003 | AUC 0.8098 | lr 0.043677 | mom 0.911 | 7.5 min
+epoca   27 | train 0.52767 | val 0.52839 | AUC 0.8101 | lr 0.043451 | mom 0.912 | 7.8 min
+epoca   28 | train 0.52707 | val 0.53372 | AUC 0.8091 | lr 0.043225 | mom 0.912 | 8.1 min
+epoca   29 | train 0.52659 | val 0.52783 | AUC 0.8109 | lr 0.043001 | mom 0.913 | 8.4 min
+epoca   30 | train 0.52638 | val 0.53010 | AUC 0.8109 | lr 0.042778 | mom 0.913 | 8.7 min
+epoca   31 | train 0.52610 | val 0.52915 | AUC 0.8118 | lr 0.042556 | mom 0.913 | 9.0 min
+epoca   32 | train 0.52569 | val 0.52649 | AUC 0.8116 | lr 0.042335 | mom 0.914 | 9.2 min
+epoca   33 | train 0.52498 | val 0.53357 | AUC 0.8123 | lr 0.042116 | mom 0.914 | 9.5 min
+epoca   34 | train 0.52471 | val 0.52754 | AUC 0.8120 | lr 0.041897 | mom 0.915 | 9.8 min
+epoca   35 | train 0.52413 | val 0.53315 | AUC 0.8131 | lr 0.041680 | mom 0.915 | 10.1 min
+epoca   36 | train 0.52395 | val 0.52617 | AUC 0.8126 | lr 0.041464 | mom 0.916 | 10.4 min
+epoca   37 | train 0.52383 | val 0.52607 | AUC 0.8128 | lr 0.041249 | mom 0.916 | 10.7 min
+epoca   38 | train 0.52328 | val 0.52720 | AUC 0.8128 | lr 0.041035 | mom 0.917 | 11.0 min
+epoca   39 | train 0.52314 | val 0.52592 | AUC 0.8134 | lr 0.040822 | mom 0.917 | 11.3 min
+epoca   40 | train 0.52320 | val 0.54733 | AUC 0.8124 | lr 0.040610 | mom 0.918 | 11.6 min
+epoca   41 | train 0.52272 | val 0.52544 | AUC 0.8133 | lr 0.040400 | mom 0.918 | 11.8 min
+epoca   42 | train 0.52229 | val 0.52374 | AUC 0.8151 | lr 0.040190 | mom 0.918 | 12.1 min
+epoca   43 | train 0.52197 | val 0.52168 | AUC 0.8159 | lr 0.039982 | mom 0.919 | 12.4 min
+epoca   44 | train 0.52141 | val 0.52222 | AUC 0.8157 | lr 0.039774 | mom 0.919 | 12.7 min
+epoca   45 | train 0.52103 | val 0.52398 | AUC 0.8162 | lr 0.039568 | mom 0.920 | 13.0 min
+epoca   46 | train 0.52099 | val 0.52283 | AUC 0.8152 | lr 0.039363 | mom 0.920 | 13.3 min
+epoca   47 | train 0.52067 | val 0.53290 | AUC 0.8126 | lr 0.039159 | mom 0.921 | 13.6 min
+epoca   48 | train 0.52047 | val 0.52508 | AUC 0.8156 | lr 0.038956 | mom 0.921 | 13.9 min
+epoca   49 | train 0.52031 | val 0.52440 | AUC 0.8145 | lr 0.038754 | mom 0.922 | 14.2 min
+epoca   50 | train 0.52012 | val 0.52322 | AUC 0.8155 | lr 0.038553 | mom 0.922 | 14.4 min
+epoca   51 | train 0.52004 | val 0.52238 | AUC 0.8155 | lr 0.038353 | mom 0.922 | 14.7 min
+epoca   52 | train 0.51989 | val 0.52544 | AUC 0.8166 | lr 0.038154 | mom 0.923 | 15.0 min
+epoca   53 | train 0.51962 | val 0.52519 | AUC 0.8140 | lr 0.037956 | mom 0.923 | 15.3 min
+epoca   54 | train 0.51938 | val 0.52967 | AUC 0.8097 | lr 0.037759 | mom 0.924 | 15.6 min
+epoca   55 | train 0.51905 | val 0.52802 | AUC 0.8151 | lr 0.037563 | mom 0.924 | 15.9 min
+epoca   56 | train 0.51891 | val 0.52240 | AUC 0.8160 | lr 0.037368 | mom 0.925 | 16.2 min
+epoca   57 | train 0.51873 | val 0.51997 | AUC 0.8172 | lr 0.037174 | mom 0.925 | 16.5 min
+epoca   58 | train 0.51904 | val 0.52356 | AUC 0.8148 | lr 0.036982 | mom 0.926 | 16.8 min
+epoca   59 | train 0.51860 | val 0.52664 | AUC 0.8171 | lr 0.036790 | mom 0.926 | 17.1 min
+epoca   60 | train 0.51841 | val 0.51974 | AUC 0.8171 | lr 0.036599 | mom 0.927 | 17.3 min
+epoca   61 | train 0.51831 | val 0.53316 | AUC 0.8163 | lr 0.036409 | mom 0.927 | 17.6 min
+epoca   62 | train 0.51835 | val 0.52697 | AUC 0.8147 | lr 0.036220 | mom 0.927 | 17.9 min
+epoca   63 | train 0.51825 | val 0.52052 | AUC 0.8169 | lr 0.036033 | mom 0.928 | 18.2 min
+epoca   64 | train 0.51781 | val 0.52123 | AUC 0.8177 | lr 0.035846 | mom 0.928 | 18.5 min
+epoca   65 | train 0.51778 | val 0.52080 | AUC 0.8175 | lr 0.035660 | mom 0.929 | 18.8 min
+epoca   66 | train 0.51778 | val 0.51764 | AUC 0.8194 | lr 0.035475 | mom 0.929 | 19.1 min
+epoca   67 | train 0.51765 | val 0.52521 | AUC 0.8148 | lr 0.035291 | mom 0.930 | 19.4 min
+epoca   68 | train 0.51738 | val 0.51992 | AUC 0.8185 | lr 0.035108 | mom 0.930 | 19.7 min
+epoca   69 | train 0.51735 | val 0.52158 | AUC 0.8171 | lr 0.034926 | mom 0.931 | 19.9 min
+epoca   70 | train 0.51747 | val 0.52094 | AUC 0.8165 | lr 0.034745 | mom 0.931 | 20.2 min
+epoca   71 | train 0.51719 | val 0.51575 | AUC 0.8204 | lr 0.034564 | mom 0.931 | 20.5 min
+epoca   72 | train 0.51720 | val 0.52848 | AUC 0.8143 | lr 0.034385 | mom 0.932 | 20.8 min
+epoca   73 | train 0.51682 | val 0.51966 | AUC 0.8174 | lr 0.034207 | mom 0.932 | 21.1 min
+epoca   74 | train 0.51677 | val 0.53014 | AUC 0.8201 | lr 0.034029 | mom 0.933 | 21.4 min
+epoca   75 | train 0.51689 | val 0.51851 | AUC 0.8184 | lr 0.033853 | mom 0.933 | 21.7 min
+epoca   76 | train 0.51642 | val 0.51841 | AUC 0.8189 | lr 0.033677 | mom 0.934 | 22.0 min
+epoca   77 | train 0.51634 | val 0.52410 | AUC 0.8188 | lr 0.033503 | mom 0.934 | 22.3 min
+epoca   78 | train 0.51640 | val 0.52397 | AUC 0.8180 | lr 0.033329 | mom 0.935 | 22.6 min
+epoca   79 | train 0.51618 | val 0.51959 | AUC 0.8189 | lr 0.033156 | mom 0.935 | 22.8 min
+epoca   80 | train 0.51599 | val 0.51790 | AUC 0.8202 | lr 0.032984 | mom 0.936 | 23.1 min
+epoca   81 | train 0.51608 | val 0.51824 | AUC 0.8192 | lr 0.032813 | mom 0.936 | 23.4 min
+epoca   82 | train 0.51592 | val 0.52499 | AUC 0.8128 | lr 0.032643 | mom 0.936 | 23.7 min
+epoca   83 | train 0.51581 | val 0.51788 | AUC 0.8204 | lr 0.032473 | mom 0.937 | 24.0 min
+epoca   84 | train 0.51566 | val 0.52171 | AUC 0.8176 | lr 0.032305 | mom 0.937 | 24.3 min
+epoca   85 | train 0.51557 | val 0.51795 | AUC 0.8205 | lr 0.032137 | mom 0.938 | 24.6 min
+epoca   86 | train 0.51528 | val 0.51999 | AUC 0.8185 | lr 0.031971 | mom 0.938 | 24.9 min
+epoca   87 | train 0.51560 | val 0.51934 | AUC 0.8182 | lr 0.031805 | mom 0.939 | 25.2 min
+epoca   88 | train 0.51521 | val 0.51854 | AUC 0.8219 | lr 0.031640 | mom 0.939 | 25.5 min
+epoca   89 | train 0.51543 | val 0.51901 | AUC 0.8187 | lr 0.031476 | mom 0.940 | 25.7 min
+epoca   90 | train 0.51549 | val 0.52725 | AUC 0.8208 | lr 0.031313 | mom 0.940 | 26.0 min
+epoca   91 | train 0.51506 | val 0.52054 | AUC 0.8191 | lr 0.031150 | mom 0.941 | 26.3 min
+epoca   92 | train 0.51519 | val 0.52291 | AUC 0.8169 | lr 0.030989 | mom 0.941 | 26.6 min
+epoca   93 | train 0.51535 | val 0.52408 | AUC 0.8169 | lr 0.030828 | mom 0.941 | 26.9 min
+epoca   94 | train 0.51526 | val 0.51850 | AUC 0.8212 | lr 0.030668 | mom 0.942 | 27.2 min
+epoca   95 | train 0.51510 | val 0.51792 | AUC 0.8188 | lr 0.030509 | mom 0.942 | 27.5 min
+epoca   96 | train 0.51549 | val 0.51630 | AUC 0.8198 | lr 0.030351 | mom 0.943 | 27.8 min
+epoca   97 | train 0.51513 | val 0.51800 | AUC 0.8219 | lr 0.030193 | mom 0.943 | 28.0 min
+epoca   98 | train 0.51542 | val 0.51500 | AUC 0.8214 | lr 0.030037 | mom 0.944 | 28.3 min
+epoca   99 | train 0.51545 | val 0.52389 | AUC 0.8180 | lr 0.029881 | mom 0.944 | 28.6 min
+epoca  100 | train 0.51506 | val 0.51791 | AUC 0.8203 | lr 0.029726 | mom 0.945 | 28.9 min
+epoca  101 | train 0.51516 | val 0.51934 | AUC 0.8196 | lr 0.029572 | mom 0.945 | 29.2 min
+epoca  102 | train 0.51535 | val 0.51829 | AUC 0.8201 | lr 0.029418 | mom 0.945 | 29.5 min
+epoca  103 | train 0.51543 | val 0.51971 | AUC 0.8195 | lr 0.029266 | mom 0.946 | 29.8 min
+epoca  104 | train 0.51539 | val 0.52029 | AUC 0.8175 | lr 0.029114 | mom 0.946 | 30.1 min
+epoca  105 | train 0.51549 | val 0.51613 | AUC 0.8207 | lr 0.028963 | mom 0.947 | 30.4 min
+epoca  106 | train 0.51528 | val 0.52009 | AUC 0.8187 | lr 0.028813 | mom 0.947 | 30.6 min
+epoca  107 | train 0.51552 | val 0.52027 | AUC 0.8172 | lr 0.028663 | mom 0.948 | 30.9 min
+epoca  108 | train 0.51571 | val 0.52046 | AUC 0.8180 | lr 0.028515 | mom 0.948 | 31.2 min
+epoca  109 | train 0.51566 | val 0.52240 | AUC 0.8171 | lr 0.028367 | mom 0.949 | 31.5 min
+epoca  110 | train 0.51560 | val 0.52613 | AUC 0.8182 | lr 0.028220 | mom 0.949 | 31.8 min
+epoca  111 | train 0.51567 | val 0.51617 | AUC 0.8216 | lr 0.028073 | mom 0.950 | 32.1 min
+epoca  112 | train 0.51572 | val 0.51897 | AUC 0.8187 | lr 0.027928 | mom 0.950 | 32.4 min
+epoca  113 | train 0.51555 | val 0.51721 | AUC 0.8198 | lr 0.027783 | mom 0.950 | 32.7 min
+epoca  114 | train 0.51593 | val 0.51740 | AUC 0.8200 | lr 0.027639 | mom 0.951 | 33.0 min
+epoca  115 | train 0.51594 | val 0.52400 | AUC 0.8169 | lr 0.027496 | mom 0.951 | 33.3 min
+epoca  116 | train 0.51639 | val 0.52067 | AUC 0.8188 | lr 0.027353 | mom 0.952 | 33.5 min
+epoca  117 | train 0.51629 | val 0.51895 | AUC 0.8204 | lr 0.027211 | mom 0.952 | 33.8 min
+epoca  118 | train 0.51627 | val 0.51450 | AUC 0.8215 | lr 0.027070 | mom 0.953 | 34.1 min
+epoca  119 | train 0.51633 | val 0.51784 | AUC 0.8205 | lr 0.026930 | mom 0.953 | 34.4 min
+epoca  120 | train 0.51636 | val 0.51864 | AUC 0.8184 | lr 0.026790 | mom 0.954 | 34.7 min
+epoca  121 | train 0.51674 | val 0.51918 | AUC 0.8179 | lr 0.026651 | mom 0.954 | 35.0 min
+epoca  122 | train 0.51698 | val 0.51592 | AUC 0.8201 | lr 0.026513 | mom 0.954 | 35.3 min
+epoca  123 | train 0.51675 | val 0.52675 | AUC 0.8181 | lr 0.026375 | mom 0.955 | 35.6 min
+epoca  124 | train 0.51735 | val 0.52590 | AUC 0.8207 | lr 0.026238 | mom 0.955 | 35.9 min
+epoca  125 | train 0.51724 | val 0.52019 | AUC 0.8177 | lr 0.026102 | mom 0.956 | 36.1 min
+epoca  126 | train 0.51707 | val 0.52603 | AUC 0.8161 | lr 0.025967 | mom 0.956 | 36.4 min
+epoca  127 | train 0.51751 | val 0.52022 | AUC 0.8182 | lr 0.025832 | mom 0.957 | 36.7 min
+epoca  128 | train 0.51781 | val 0.53032 | AUC 0.8150 | lr 0.025698 | mom 0.957 | 37.0 min
+epoca  129 | train 0.51822 | val 0.52095 | AUC 0.8193 | lr 0.025565 | mom 0.958 | 37.3 min
+epoca  130 | train 0.51811 | val 0.52460 | AUC 0.8203 | lr 0.025432 | mom 0.958 | 37.6 min
+epoca  131 | train 0.51816 | val 0.52124 | AUC 0.8162 | lr 0.025300 | mom 0.959 | 37.9 min
+epoca  132 | train 0.51855 | val 0.51702 | AUC 0.8200 | lr 0.025169 | mom 0.959 | 38.2 min
+epoca  133 | train 0.51920 | val 0.52603 | AUC 0.8168 | lr 0.025039 | mom 0.959 | 38.5 min
+epoca  134 | train 0.51868 | val 0.52523 | AUC 0.8188 | lr 0.024909 | mom 0.960 | 38.7 min
+epoca  135 | train 0.51890 | val 0.52256 | AUC 0.8171 | lr 0.024780 | mom 0.960 | 39.0 min
+epoca  136 | train 0.51942 | val 0.51907 | AUC 0.8200 | lr 0.024651 | mom 0.961 | 39.3 min
+epoca  137 | train 0.51960 | val 0.52013 | AUC 0.8195 | lr 0.024523 | mom 0.961 | 39.6 min
+epoca  138 | train 0.51972 | val 0.52056 | AUC 0.8177 | lr 0.024396 | mom 0.962 | 39.9 min
+epoca  139 | train 0.51979 | val 0.51912 | AUC 0.8189 | lr 0.024270 | mom 0.962 | 40.2 min
+epoca  140 | train 0.52018 | val 0.52294 | AUC 0.8177 | lr 0.024144 | mom 0.963 | 40.5 min
+epoca  141 | train 0.52000 | val 0.52316 | AUC 0.8144 | lr 0.024018 | mom 0.963 | 40.8 min
+epoca  142 | train 0.52119 | val 0.53027 | AUC 0.8146 | lr 0.023894 | mom 0.963 | 41.1 min
+epoca  143 | train 0.52079 | val 0.52032 | AUC 0.8183 | lr 0.023770 | mom 0.964 | 41.3 min
+epoca  144 | train 0.52173 | val 0.52279 | AUC 0.8153 | lr 0.023647 | mom 0.964 | 41.6 min
+epoca  145 | train 0.52145 | val 0.52136 | AUC 0.8181 | lr 0.023524 | mom 0.965 | 41.9 min
+epoca  146 | train 0.52202 | val 0.52763 | AUC 0.8156 | lr 0.023402 | mom 0.965 | 42.2 min
+epoca  147 | train 0.52231 | val 0.52530 | AUC 0.8165 | lr 0.023281 | mom 0.966 | 42.5 min
+epoca  148 | train 0.52286 | val 0.52610 | AUC 0.8142 | lr 0.023160 | mom 0.966 | 42.8 min
+epoca  149 | train 0.52367 | val 0.52166 | AUC 0.8155 | lr 0.023040 | mom 0.967 | 43.1 min
+epoca  150 | train 0.52332 | val 0.52568 | AUC 0.8175 | lr 0.022920 | mom 0.967 | 43.4 min
+epoca  151 | train 0.52418 | val 0.53036 | AUC 0.8145 | lr 0.022801 | mom 0.968 | 43.7 min
+epoca  152 | train 0.52479 | val 0.52345 | AUC 0.8171 | lr 0.022683 | mom 0.968 | 44.0 min
+epoca  153 | train 0.52500 | val 0.52596 | AUC 0.8169 | lr 0.022566 | mom 0.968 | 44.2 min
+epoca  154 | train 0.52527 | val 0.52781 | AUC 0.8124 | lr 0.022448 | mom 0.969 | 44.5 min
+epoca  155 | train 0.52568 | val 0.52282 | AUC 0.8162 | lr 0.022332 | mom 0.969 | 44.8 min
+epoca  156 | train 0.52586 | val 0.52699 | AUC 0.8117 | lr 0.022216 | mom 0.970 | 45.1 min
+epoca  157 | train 0.52671 | val 0.52470 | AUC 0.8150 | lr 0.022101 | mom 0.970 | 45.4 min
+epoca  158 | train 0.52696 | val 0.54633 | AUC 0.8118 | lr 0.021986 | mom 0.971 | 45.7 min
+epoca  159 | train 0.52811 | val 0.52611 | AUC 0.8133 | lr 0.021872 | mom 0.971 | 46.0 min
+epoca  160 | train 0.52847 | val 0.53059 | AUC 0.8105 | lr 0.021759 | mom 0.972 | 46.3 min
+epoca  161 | train 0.52922 | val 0.53453 | AUC 0.8125 | lr 0.021646 | mom 0.972 | 46.6 min
+epoca  162 | train 0.52986 | val 0.52884 | AUC 0.8090 | lr 0.021534 | mom 0.972 | 46.8 min
+epoca  163 | train 0.53045 | val 0.53521 | AUC 0.8087 | lr 0.021422 | mom 0.973 | 47.1 min
+epoca  164 | train 0.53127 | val 0.52742 | AUC 0.8106 | lr 0.021311 | mom 0.973 | 47.4 min
+epoca  165 | train 0.53242 | val 0.55186 | AUC 0.8045 | lr 0.021200 | mom 0.974 | 47.7 min
+epoca  166 | train 0.53292 | val 0.53749 | AUC 0.8025 | lr 0.021091 | mom 0.974 | 48.0 min
+epoca  167 | train 0.53369 | val 0.53802 | AUC 0.8120 | lr 0.020981 | mom 0.975 | 48.3 min
+epoca  168 | train 0.53470 | val 0.53188 | AUC 0.8084 | lr 0.020872 | mom 0.975 | 48.6 min
+epoca  169 | train 0.53615 | val 0.53109 | AUC 0.8084 | lr 0.020764 | mom 0.976 | 48.9 min
+epoca  170 | train 0.53829 | val 0.53361 | AUC 0.8051 | lr 0.020656 | mom 0.976 | 49.2 min
+epoca  171 | train 0.53877 | val 0.54413 | AUC 0.8056 | lr 0.020549 | mom 0.977 | 49.5 min
+epoca  172 | train 0.54047 | val 0.54118 | AUC 0.8092 | lr 0.020443 | mom 0.977 | 49.7 min
+epoca  173 | train 0.54281 | val 0.55016 | AUC 0.7953 | lr 0.020337 | mom 0.977 | 50.0 min
+epoca  174 | train 0.54597 | val 0.54380 | AUC 0.7964 | lr 0.020231 | mom 0.978 | 50.3 min
+epoca  175 | train 0.54912 | val 0.54600 | AUC 0.8007 | lr 0.020126 | mom 0.978 | 50.6 min
+epoca  176 | train 0.55409 | val 0.54270 | AUC 0.7977 | lr 0.020022 | mom 0.979 | 50.9 min
+epoca  177 | train 0.56124 | val 0.54745 | AUC 0.7947 | lr 0.019918 | mom 0.979 | 51.2 min
+epoca  178 | train 0.57760 | val 0.63793 | AUC 0.7525 | lr 0.019815 | mom 0.980 | 51.5 min
+epoca  179 | train 0.70700 | val 0.63472 | AUC 0.7379 | lr 0.019712 | mom 0.980 | 51.8 min
+epoca  180 | train 0.78439 | val 1.19260 | AUC 0.7040 | lr 0.019610 | mom 0.981 | 52.0 min
+epoca  181 | train 0.82819 | val 0.70257 | AUC 0.7139 | lr 0.019508 | mom 0.981 | 52.3 min
+epoca  182 | train 0.84825 | val 1.09784 | AUC 0.6929 | lr 0.019407 | mom 0.981 | 52.6 min
+epoca  183 | train 0.86357 | val 0.84626 | AUC 0.6718 | lr 0.019306 | mom 0.982 | 52.9 min
+epoca  184 | train 0.87915 | val 0.84895 | AUC 0.6321 | lr 0.019206 | mom 0.982 | 53.2 min
+epoca  185 | train 0.89514 | val 0.97742 | AUC 0.5951 | lr 0.019106 | mom 0.983 | 53.5 min
+epoca  186 | train 0.92187 | val 1.20699 | AUC 0.5578 | lr 0.019007 | mom 0.983 | 53.8 min
+epoca  187 | train 0.91118 | val 0.73499 | AUC 0.6913 | lr 0.018909 | mom 0.984 | 54.1 min
+epoca  188 | train 0.92638 | val 1.48750 | AUC 0.6662 | lr 0.018811 | mom 0.984 | 54.4 min
+epoca  189 | train 0.96121 | val 0.92409 | AUC 0.7014 | lr 0.018713 | mom 0.985 | 54.7 min
+epoca  190 | train 0.93676 | val 0.89065 | AUC 0.6330 | lr 0.018616 | mom 0.985 | 54.9 min
+epoca  191 | train 0.94151 | val 0.72375 | AUC 0.6883 | lr 0.018519 | mom 0.986 | 55.2 min
+epoca  192 | train 0.97355 | val 1.10615 | AUC 0.6964 | lr 0.018423 | mom 0.986 | 55.5 min
+epoca  193 | train 0.98202 | val 0.75603 | AUC 0.6780 | lr 0.018328 | mom 0.986 | 55.8 min
+epoca  194 | train 1.07603 | val 0.97703 | AUC 0.6875 | lr 0.018233 | mom 0.987 | 56.1 min
+epoca  195 | train 1.06069 | val 1.33243 | AUC 0.6218 | lr 0.018138 | mom 0.987 | 56.4 min
+epoca  196 | train 1.05104 | val 0.74627 | AUC 0.6648 | lr 0.018044 | mom 0.988 | 56.7 min
+epoca  197 | train 1.08199 | val 0.82330 | AUC 0.6383 | lr 0.017951 | mom 0.988 | 57.0 min
+epoca  198 | train 1.10159 | val 0.87585 | AUC 0.6494 | lr 0.017857 | mom 0.989 | 57.2 min
+epoca  199 | train 1.23262 | val 1.34120 | AUC 0.6276 | lr 0.017765 | mom 0.989 | 57.5 min
+epoca  200 | train 1.23652 | val 0.86438 | AUC 0.6402 | lr 0.017673 | mom 0.990 | 57.8 min
+epoca  201 | train 1.39788 | val 2.20962 | AUC 0.4194 | lr 0.017581 | mom 0.990 | 58.1 min
+
+Fermato: nessun miglioramento da 10 epoche.
+
+Migliore perdita di validation: 0.51450
+Epoche eseguite: 201
+Tempo totale: 58.1 min
+
+[seme 3] TEST: perdita 0.51353, AUC 0.8227
+
+------------------------------------------------------------
+[seme 4] inizio
+------------------------------------------------------------
+Addestramento su cuda, 2,600,000 eventi, batch da 100
+Ottimizzatore: sgd, lr iniziale 0.05
+26,000 aggiornamenti per epoca
+Log TensorBoard in /home/luca/Desktop/Code/ali/Deep-Learning/ExoticParticles_HEP/runs/riproduzione/deep_low_seme4
+
+epoca    1 | train 0.62761 | val 0.60031 | AUC 0.7407 | lr 0.049741 | mom 0.900 | 0.2 min
+epoca    2 | train 0.59215 | val 0.57943 | AUC 0.7605 | lr 0.049483 | mom 0.900 | 0.4 min
+epoca    3 | train 0.57925 | val 0.57300 | AUC 0.7675 | lr 0.049226 | mom 0.901 | 0.7 min
+epoca    4 | train 0.57129 | val 0.57142 | AUC 0.7739 | lr 0.048971 | mom 0.901 | 0.9 min
+epoca    5 | train 0.56535 | val 0.57979 | AUC 0.7783 | lr 0.048717 | mom 0.902 | 1.1 min
+epoca    6 | train 0.56042 | val 0.56602 | AUC 0.7782 | lr 0.048464 | mom 0.902 | 1.3 min
+epoca    7 | train 0.55679 | val 0.55365 | AUC 0.7863 | lr 0.048213 | mom 0.903 | 1.5 min
+epoca    8 | train 0.55405 | val 0.55108 | AUC 0.7896 | lr 0.047963 | mom 0.903 | 1.7 min
+epoca    9 | train 0.55182 | val 0.55013 | AUC 0.7915 | lr 0.047714 | mom 0.904 | 2.0 min
+epoca   10 | train 0.54953 | val 0.55552 | AUC 0.7894 | lr 0.047466 | mom 0.904 | 2.2 min
+epoca   11 | train 0.54720 | val 0.54679 | AUC 0.7931 | lr 0.047220 | mom 0.904 | 2.4 min
+epoca   12 | train 0.54536 | val 0.54620 | AUC 0.7963 | lr 0.046975 | mom 0.905 | 2.6 min
+epoca   13 | train 0.54353 | val 0.55120 | AUC 0.7984 | lr 0.046732 | mom 0.905 | 2.8 min
+epoca   14 | train 0.54137 | val 0.53861 | AUC 0.8017 | lr 0.046489 | mom 0.906 | 3.1 min
+epoca   15 | train 0.53934 | val 0.53981 | AUC 0.8009 | lr 0.046248 | mom 0.906 | 3.3 min
+epoca   16 | train 0.53750 | val 0.54058 | AUC 0.8000 | lr 0.046008 | mom 0.907 | 3.5 min
+epoca   17 | train 0.53626 | val 0.53808 | AUC 0.8019 | lr 0.045770 | mom 0.907 | 3.7 min
+epoca   18 | train 0.53487 | val 0.53321 | AUC 0.8065 | lr 0.045532 | mom 0.908 | 3.9 min
+epoca   19 | train 0.53370 | val 0.53447 | AUC 0.8060 | lr 0.045296 | mom 0.908 | 4.1 min
+epoca   20 | train 0.53269 | val 0.53483 | AUC 0.8061 | lr 0.045061 | mom 0.909 | 4.4 min
+epoca   21 | train 0.53160 | val 0.53106 | AUC 0.8077 | lr 0.044828 | mom 0.909 | 4.6 min
+epoca   22 | train 0.53045 | val 0.53076 | AUC 0.8091 | lr 0.044595 | mom 0.909 | 4.8 min
+epoca   23 | train 0.52961 | val 0.52863 | AUC 0.8106 | lr 0.044364 | mom 0.910 | 5.0 min
+epoca   24 | train 0.52894 | val 0.53527 | AUC 0.8061 | lr 0.044134 | mom 0.910 | 5.2 min
+epoca   25 | train 0.52825 | val 0.52867 | AUC 0.8104 | lr 0.043905 | mom 0.911 | 5.5 min
+epoca   26 | train 0.52728 | val 0.53115 | AUC 0.8090 | lr 0.043677 | mom 0.911 | 5.7 min
+epoca   27 | train 0.52697 | val 0.52653 | AUC 0.8122 | lr 0.043451 | mom 0.912 | 5.9 min
+epoca   28 | train 0.52622 | val 0.53102 | AUC 0.8101 | lr 0.043225 | mom 0.912 | 6.1 min
+epoca   29 | train 0.52567 | val 0.53186 | AUC 0.8080 | lr 0.043001 | mom 0.913 | 6.3 min
+epoca   30 | train 0.52556 | val 0.52653 | AUC 0.8123 | lr 0.042778 | mom 0.913 | 6.5 min
+epoca   31 | train 0.52480 | val 0.52593 | AUC 0.8141 | lr 0.042556 | mom 0.913 | 6.8 min
+epoca   32 | train 0.52421 | val 0.52718 | AUC 0.8118 | lr 0.042335 | mom 0.914 | 7.0 min
+epoca   33 | train 0.52369 | val 0.52786 | AUC 0.8133 | lr 0.042116 | mom 0.914 | 7.2 min
+epoca   34 | train 0.52327 | val 0.52989 | AUC 0.8124 | lr 0.041897 | mom 0.915 | 7.4 min
+epoca   35 | train 0.52280 | val 0.54554 | AUC 0.8120 | lr 0.041680 | mom 0.915 | 7.6 min
+epoca   36 | train 0.52224 | val 0.52556 | AUC 0.8136 | lr 0.041464 | mom 0.916 | 7.8 min
+epoca   37 | train 0.52162 | val 0.53065 | AUC 0.8130 | lr 0.041249 | mom 0.916 | 8.1 min
+epoca   38 | train 0.52151 | val 0.53173 | AUC 0.8101 | lr 0.041035 | mom 0.917 | 8.3 min
+epoca   39 | train 0.52107 | val 0.52635 | AUC 0.8154 | lr 0.040822 | mom 0.917 | 8.5 min
+epoca   40 | train 0.52077 | val 0.52184 | AUC 0.8173 | lr 0.040610 | mom 0.918 | 8.7 min
+epoca   41 | train 0.52049 | val 0.52150 | AUC 0.8155 | lr 0.040400 | mom 0.918 | 8.9 min
+epoca   42 | train 0.52011 | val 0.52341 | AUC 0.8151 | lr 0.040190 | mom 0.918 | 9.2 min
+epoca   43 | train 0.51971 | val 0.52840 | AUC 0.8130 | lr 0.039982 | mom 0.919 | 9.4 min
+epoca   44 | train 0.51954 | val 0.51968 | AUC 0.8178 | lr 0.039774 | mom 0.919 | 9.6 min
+epoca   45 | train 0.51909 | val 0.52176 | AUC 0.8165 | lr 0.039568 | mom 0.920 | 9.8 min
+epoca   46 | train 0.51882 | val 0.52222 | AUC 0.8179 | lr 0.039363 | mom 0.920 | 10.0 min
+epoca   47 | train 0.51804 | val 0.52126 | AUC 0.8175 | lr 0.039159 | mom 0.921 | 10.2 min
+epoca   48 | train 0.51811 | val 0.52308 | AUC 0.8175 | lr 0.038956 | mom 0.921 | 10.5 min
+epoca   49 | train 0.51760 | val 0.52582 | AUC 0.8143 | lr 0.038754 | mom 0.922 | 10.7 min
+epoca   50 | train 0.51735 | val 0.52001 | AUC 0.8207 | lr 0.038553 | mom 0.922 | 10.9 min
+epoca   51 | train 0.51719 | val 0.51705 | AUC 0.8196 | lr 0.038353 | mom 0.922 | 11.1 min
+epoca   52 | train 0.51684 | val 0.51890 | AUC 0.8184 | lr 0.038154 | mom 0.923 | 11.3 min
+epoca   53 | train 0.51663 | val 0.51631 | AUC 0.8198 | lr 0.037956 | mom 0.923 | 11.6 min
+epoca   54 | train 0.51658 | val 0.52183 | AUC 0.8179 | lr 0.037759 | mom 0.924 | 11.8 min
+epoca   55 | train 0.51629 | val 0.52341 | AUC 0.8172 | lr 0.037563 | mom 0.924 | 12.0 min
+epoca   56 | train 0.51578 | val 0.51810 | AUC 0.8211 | lr 0.037368 | mom 0.925 | 12.2 min
+epoca   57 | train 0.51561 | val 0.51727 | AUC 0.8191 | lr 0.037174 | mom 0.925 | 12.4 min
+epoca   58 | train 0.51555 | val 0.51777 | AUC 0.8205 | lr 0.036982 | mom 0.926 | 12.6 min
+epoca   59 | train 0.51551 | val 0.51919 | AUC 0.8185 | lr 0.036790 | mom 0.926 | 12.9 min
+epoca   60 | train 0.51514 | val 0.51945 | AUC 0.8179 | lr 0.036599 | mom 0.927 | 13.1 min
+epoca   61 | train 0.51491 | val 0.51928 | AUC 0.8208 | lr 0.036409 | mom 0.927 | 13.3 min
+epoca   62 | train 0.51492 | val 0.51813 | AUC 0.8205 | lr 0.036220 | mom 0.927 | 13.5 min
+epoca   63 | train 0.51469 | val 0.51774 | AUC 0.8202 | lr 0.036033 | mom 0.928 | 13.7 min
+epoca   64 | train 0.51460 | val 0.51976 | AUC 0.8205 | lr 0.035846 | mom 0.928 | 14.0 min
+epoca   65 | train 0.51466 | val 0.51660 | AUC 0.8209 | lr 0.035660 | mom 0.929 | 14.2 min
+epoca   66 | train 0.51452 | val 0.51931 | AUC 0.8220 | lr 0.035475 | mom 0.929 | 14.4 min
+epoca   67 | train 0.51446 | val 0.51804 | AUC 0.8209 | lr 0.035291 | mom 0.930 | 14.6 min
+epoca   68 | train 0.51435 | val 0.52043 | AUC 0.8188 | lr 0.035108 | mom 0.930 | 14.8 min
+epoca   69 | train 0.51429 | val 0.52638 | AUC 0.8175 | lr 0.034926 | mom 0.931 | 15.0 min
+epoca   70 | train 0.51397 | val 0.51471 | AUC 0.8215 | lr 0.034745 | mom 0.931 | 15.3 min
+epoca   71 | train 0.51403 | val 0.51980 | AUC 0.8199 | lr 0.034564 | mom 0.931 | 15.5 min
+epoca   72 | train 0.51383 | val 0.51864 | AUC 0.8206 | lr 0.034385 | mom 0.932 | 15.7 min
+epoca   73 | train 0.51402 | val 0.51856 | AUC 0.8200 | lr 0.034207 | mom 0.932 | 15.9 min
+epoca   74 | train 0.51393 | val 0.51844 | AUC 0.8189 | lr 0.034029 | mom 0.933 | 16.1 min
+epoca   75 | train 0.51371 | val 0.51991 | AUC 0.8198 | lr 0.033853 | mom 0.933 | 16.3 min
+epoca   76 | train 0.51402 | val 0.51566 | AUC 0.8205 | lr 0.033677 | mom 0.934 | 16.6 min
+epoca   77 | train 0.51387 | val 0.51343 | AUC 0.8224 | lr 0.033503 | mom 0.934 | 16.8 min
+epoca   78 | train 0.51378 | val 0.52032 | AUC 0.8193 | lr 0.033329 | mom 0.935 | 17.0 min
+epoca   79 | train 0.51375 | val 0.51410 | AUC 0.8217 | lr 0.033156 | mom 0.935 | 17.2 min
+epoca   80 | train 0.51353 | val 0.51946 | AUC 0.8202 | lr 0.032984 | mom 0.936 | 17.4 min
+epoca   81 | train 0.51346 | val 0.51799 | AUC 0.8193 | lr 0.032813 | mom 0.936 | 17.6 min
+epoca   82 | train 0.51370 | val 0.51807 | AUC 0.8204 | lr 0.032643 | mom 0.936 | 17.9 min
+epoca   83 | train 0.51335 | val 0.52544 | AUC 0.8182 | lr 0.032473 | mom 0.937 | 18.1 min
+epoca   84 | train 0.51354 | val 0.52145 | AUC 0.8198 | lr 0.032305 | mom 0.937 | 18.3 min
+epoca   85 | train 0.51351 | val 0.51343 | AUC 0.8233 | lr 0.032137 | mom 0.938 | 18.5 min
+epoca   86 | train 0.51347 | val 0.51467 | AUC 0.8226 | lr 0.031971 | mom 0.938 | 18.7 min
+epoca   87 | train 0.51331 | val 0.51524 | AUC 0.8225 | lr 0.031805 | mom 0.939 | 19.0 min
+epoca   88 | train 0.51314 | val 0.52028 | AUC 0.8179 | lr 0.031640 | mom 0.939 | 19.2 min
+epoca   89 | train 0.51309 | val 0.51805 | AUC 0.8208 | lr 0.031476 | mom 0.940 | 19.4 min
+epoca   90 | train 0.51337 | val 0.51495 | AUC 0.8221 | lr 0.031313 | mom 0.940 | 19.6 min
+epoca   91 | train 0.51348 | val 0.52189 | AUC 0.8211 | lr 0.031150 | mom 0.941 | 19.8 min
+epoca   92 | train 0.51347 | val 0.52121 | AUC 0.8217 | lr 0.030989 | mom 0.941 | 20.0 min
+epoca   93 | train 0.51346 | val 0.51730 | AUC 0.8196 | lr 0.030828 | mom 0.941 | 20.3 min
+epoca   94 | train 0.51337 | val 0.52038 | AUC 0.8220 | lr 0.030668 | mom 0.942 | 20.5 min
+epoca   95 | train 0.51364 | val 0.51832 | AUC 0.8226 | lr 0.030509 | mom 0.942 | 20.7 min
+epoca   96 | train 0.51360 | val 0.51856 | AUC 0.8209 | lr 0.030351 | mom 0.943 | 20.9 min
+epoca   97 | train 0.51357 | val 0.51809 | AUC 0.8199 | lr 0.030193 | mom 0.943 | 21.1 min
+epoca   98 | train 0.51362 | val 0.52644 | AUC 0.8193 | lr 0.030037 | mom 0.944 | 21.4 min
+epoca   99 | train 0.51335 | val 0.52254 | AUC 0.8210 | lr 0.029881 | mom 0.944 | 21.6 min
+epoca  100 | train 0.51350 | val 0.52242 | AUC 0.8210 | lr 0.029726 | mom 0.945 | 21.8 min
+epoca  101 | train 0.51366 | val 0.51937 | AUC 0.8187 | lr 0.029572 | mom 0.945 | 22.0 min
+epoca  102 | train 0.51391 | val 0.51675 | AUC 0.8216 | lr 0.029418 | mom 0.945 | 22.2 min
+epoca  103 | train 0.51383 | val 0.51934 | AUC 0.8190 | lr 0.029266 | mom 0.946 | 22.4 min
+epoca  104 | train 0.51396 | val 0.51966 | AUC 0.8178 | lr 0.029114 | mom 0.946 | 22.7 min
+epoca  105 | train 0.51371 | val 0.52112 | AUC 0.8199 | lr 0.028963 | mom 0.947 | 22.9 min
+epoca  106 | train 0.51409 | val 0.51701 | AUC 0.8209 | lr 0.028813 | mom 0.947 | 23.1 min
+epoca  107 | train 0.51409 | val 0.52224 | AUC 0.8194 | lr 0.028663 | mom 0.948 | 23.3 min
+epoca  108 | train 0.51424 | val 0.51703 | AUC 0.8199 | lr 0.028515 | mom 0.948 | 23.5 min
+epoca  109 | train 0.51411 | val 0.51495 | AUC 0.8211 | lr 0.028367 | mom 0.949 | 23.8 min
+epoca  110 | train 0.51457 | val 0.52260 | AUC 0.8162 | lr 0.028220 | mom 0.949 | 24.0 min
+epoca  111 | train 0.51452 | val 0.51650 | AUC 0.8226 | lr 0.028073 | mom 0.950 | 24.2 min
+epoca  112 | train 0.51466 | val 0.51799 | AUC 0.8189 | lr 0.027928 | mom 0.950 | 24.4 min
+epoca  113 | train 0.51477 | val 0.51735 | AUC 0.8203 | lr 0.027783 | mom 0.950 | 24.6 min
+epoca  114 | train 0.51478 | val 0.51768 | AUC 0.8189 | lr 0.027639 | mom 0.951 | 24.8 min
+epoca  115 | train 0.51493 | val 0.52253 | AUC 0.8201 | lr 0.027496 | mom 0.951 | 25.1 min
+epoca  116 | train 0.51516 | val 0.51670 | AUC 0.8200 | lr 0.027353 | mom 0.952 | 25.3 min
+epoca  117 | train 0.51546 | val 0.52574 | AUC 0.8193 | lr 0.027211 | mom 0.952 | 25.5 min
+epoca  118 | train 0.51542 | val 0.51671 | AUC 0.8196 | lr 0.027070 | mom 0.953 | 25.7 min
+epoca  119 | train 0.51541 | val 0.51662 | AUC 0.8203 | lr 0.026930 | mom 0.953 | 25.9 min
+epoca  120 | train 0.51563 | val 0.51592 | AUC 0.8223 | lr 0.026790 | mom 0.954 | 26.2 min
+epoca  121 | train 0.51543 | val 0.52178 | AUC 0.8180 | lr 0.026651 | mom 0.954 | 26.4 min
+epoca  122 | train 0.51574 | val 0.52374 | AUC 0.8154 | lr 0.026513 | mom 0.954 | 26.6 min
+epoca  123 | train 0.51578 | val 0.51704 | AUC 0.8196 | lr 0.026375 | mom 0.955 | 26.8 min
+epoca  124 | train 0.51611 | val 0.52028 | AUC 0.8186 | lr 0.026238 | mom 0.955 | 27.0 min
+epoca  125 | train 0.51656 | val 0.51733 | AUC 0.8208 | lr 0.026102 | mom 0.956 | 27.2 min
+epoca  126 | train 0.51649 | val 0.52112 | AUC 0.8183 | lr 0.025967 | mom 0.956 | 27.5 min
+epoca  127 | train 0.51651 | val 0.52110 | AUC 0.8186 | lr 0.025832 | mom 0.957 | 27.7 min
+epoca  128 | train 0.51680 | val 0.52798 | AUC 0.8184 | lr 0.025698 | mom 0.957 | 27.9 min
+epoca  129 | train 0.51660 | val 0.51624 | AUC 0.8219 | lr 0.025565 | mom 0.958 | 28.1 min
+epoca  130 | train 0.51681 | val 0.54749 | AUC 0.8137 | lr 0.025432 | mom 0.958 | 28.3 min
+epoca  131 | train 0.51712 | val 0.52064 | AUC 0.8184 | lr 0.025300 | mom 0.959 | 28.6 min
+epoca  132 | train 0.51751 | val 0.52630 | AUC 0.8183 | lr 0.025169 | mom 0.959 | 28.8 min
+epoca  133 | train 0.51794 | val 0.52100 | AUC 0.8221 | lr 0.025039 | mom 0.959 | 29.0 min
+epoca  134 | train 0.51800 | val 0.53017 | AUC 0.8167 | lr 0.024909 | mom 0.960 | 29.2 min
+epoca  135 | train 0.51820 | val 0.52559 | AUC 0.8171 | lr 0.024780 | mom 0.960 | 29.4 min
+epoca  136 | train 0.51835 | val 0.52277 | AUC 0.8198 | lr 0.024651 | mom 0.961 | 29.7 min
+epoca  137 | train 0.51854 | val 0.52597 | AUC 0.8164 | lr 0.024523 | mom 0.961 | 29.9 min
+epoca  138 | train 0.51861 | val 0.52071 | AUC 0.8185 | lr 0.024396 | mom 0.962 | 30.1 min
+epoca  139 | train 0.51891 | val 0.51971 | AUC 0.8182 | lr 0.024270 | mom 0.962 | 30.3 min
+epoca  140 | train 0.51953 | val 0.52462 | AUC 0.8162 | lr 0.024144 | mom 0.963 | 30.5 min
+epoca  141 | train 0.51989 | val 0.52274 | AUC 0.8203 | lr 0.024018 | mom 0.963 | 30.8 min
+epoca  142 | train 0.51989 | val 0.51907 | AUC 0.8182 | lr 0.023894 | mom 0.963 | 31.0 min
+epoca  143 | train 0.52009 | val 0.52469 | AUC 0.8183 | lr 0.023770 | mom 0.964 | 31.2 min
+epoca  144 | train 0.52077 | val 0.52112 | AUC 0.8166 | lr 0.023647 | mom 0.964 | 31.4 min
+epoca  145 | train 0.52100 | val 0.51820 | AUC 0.8191 | lr 0.023524 | mom 0.965 | 31.6 min
+epoca  146 | train 0.52132 | val 0.52378 | AUC 0.8141 | lr 0.023402 | mom 0.965 | 31.8 min
+epoca  147 | train 0.52170 | val 0.52691 | AUC 0.8136 | lr 0.023281 | mom 0.966 | 32.1 min
+epoca  148 | train 0.52220 | val 0.52287 | AUC 0.8158 | lr 0.023160 | mom 0.966 | 32.3 min
+epoca  149 | train 0.52197 | val 0.52720 | AUC 0.8135 | lr 0.023040 | mom 0.967 | 32.5 min
+epoca  150 | train 0.52263 | val 0.52081 | AUC 0.8161 | lr 0.022920 | mom 0.967 | 32.7 min
+epoca  151 | train 0.52364 | val 0.52825 | AUC 0.8143 | lr 0.022801 | mom 0.968 | 32.9 min
+epoca  152 | train 0.52349 | val 0.52124 | AUC 0.8173 | lr 0.022683 | mom 0.968 | 33.2 min
+epoca  153 | train 0.52417 | val 0.52822 | AUC 0.8128 | lr 0.022566 | mom 0.968 | 33.4 min
+epoca  154 | train 0.52501 | val 0.54531 | AUC 0.8123 | lr 0.022448 | mom 0.969 | 33.6 min
+epoca  155 | train 0.52520 | val 0.52761 | AUC 0.8116 | lr 0.022332 | mom 0.969 | 33.8 min
+epoca  156 | train 0.52574 | val 0.53459 | AUC 0.8148 | lr 0.022216 | mom 0.970 | 34.0 min
+epoca  157 | train 0.52584 | val 0.52849 | AUC 0.8127 | lr 0.022101 | mom 0.970 | 34.2 min
+epoca  158 | train 0.52747 | val 0.53059 | AUC 0.8120 | lr 0.021986 | mom 0.971 | 34.5 min
+epoca  159 | train 0.52749 | val 0.53337 | AUC 0.8109 | lr 0.021872 | mom 0.971 | 34.7 min
+epoca  160 | train 0.52873 | val 0.53651 | AUC 0.8072 | lr 0.021759 | mom 0.972 | 34.9 min
+epoca  161 | train 0.52826 | val 0.53965 | AUC 0.8092 | lr 0.021646 | mom 0.972 | 35.1 min
+epoca  162 | train 0.52925 | val 0.53609 | AUC 0.8058 | lr 0.021534 | mom 0.972 | 35.3 min
+epoca  163 | train 0.52961 | val 0.53313 | AUC 0.8101 | lr 0.021422 | mom 0.973 | 35.6 min
+epoca  164 | train 0.53077 | val 0.53708 | AUC 0.8067 | lr 0.021311 | mom 0.973 | 35.8 min
+epoca  165 | train 0.53203 | val 0.52866 | AUC 0.8119 | lr 0.021200 | mom 0.974 | 36.0 min
+epoca  166 | train 0.53183 | val 0.52923 | AUC 0.8103 | lr 0.021091 | mom 0.974 | 36.2 min
+epoca  167 | train 0.53339 | val 0.53553 | AUC 0.8087 | lr 0.020981 | mom 0.975 | 36.4 min
+epoca  168 | train 0.53523 | val 0.54427 | AUC 0.8080 | lr 0.020872 | mom 0.975 | 36.7 min
+epoca  169 | train 0.53673 | val 0.54468 | AUC 0.7962 | lr 0.020764 | mom 0.976 | 36.9 min
+epoca  170 | train 0.53776 | val 0.53173 | AUC 0.8068 | lr 0.020656 | mom 0.976 | 37.1 min
+epoca  171 | train 0.54010 | val 0.53478 | AUC 0.8107 | lr 0.020549 | mom 0.977 | 37.3 min
+epoca  172 | train 0.54154 | val 0.54499 | AUC 0.8039 | lr 0.020443 | mom 0.977 | 37.5 min
+epoca  173 | train 0.54369 | val 0.54868 | AUC 0.7932 | lr 0.020337 | mom 0.977 | 37.7 min
+epoca  174 | train 0.54744 | val 0.56100 | AUC 0.8048 | lr 0.020231 | mom 0.978 | 38.0 min
+epoca  175 | train 0.55192 | val 0.55843 | AUC 0.7913 | lr 0.020126 | mom 0.978 | 38.2 min
+epoca  176 | train 0.55738 | val 0.55664 | AUC 0.7943 | lr 0.020022 | mom 0.979 | 38.4 min
+epoca  177 | train 0.57059 | val 0.59545 | AUC 0.7715 | lr 0.019918 | mom 0.979 | 38.6 min
+epoca  178 | train 0.64107 | val 0.85801 | AUC 0.6922 | lr 0.019815 | mom 0.980 | 38.8 min
+epoca  179 | train 0.76554 | val 0.79442 | AUC 0.7340 | lr 0.019712 | mom 0.980 | 39.1 min
+epoca  180 | train 0.81524 | val 0.74661 | AUC 0.6761 | lr 0.019610 | mom 0.981 | 39.3 min
+epoca  181 | train 0.85147 | val 0.64665 | AUC 0.7064 | lr 0.019508 | mom 0.981 | 39.5 min
+epoca  182 | train 0.84221 | val 0.64963 | AUC 0.6960 | lr 0.019407 | mom 0.981 | 39.7 min
+epoca  183 | train 0.87262 | val 1.01087 | AUC 0.6982 | lr 0.019306 | mom 0.982 | 39.9 min
+epoca  184 | train 0.87553 | val 0.67699 | AUC 0.7010 | lr 0.019206 | mom 0.982 | 40.1 min
+epoca  185 | train 0.91629 | val 0.76490 | AUC 0.6678 | lr 0.019106 | mom 0.983 | 40.4 min
+epoca  186 | train 0.88365 | val 0.64548 | AUC 0.7109 | lr 0.019007 | mom 0.983 | 40.6 min
+epoca  187 | train 0.93772 | val 1.42154 | AUC 0.5752 | lr 0.018909 | mom 0.984 | 40.8 min
+epoca  188 | train 0.94245 | val 0.68561 | AUC 0.6756 | lr 0.018811 | mom 0.984 | 41.0 min
+epoca  189 | train 0.96693 | val 0.80792 | AUC 0.6332 | lr 0.018713 | mom 0.985 | 41.2 min
+epoca  190 | train 0.94899 | val 0.81668 | AUC 0.6707 | lr 0.018616 | mom 0.985 | 41.5 min
+epoca  191 | train 0.97375 | val 0.66947 | AUC 0.6638 | lr 0.018519 | mom 0.986 | 41.7 min
+epoca  192 | train 0.99446 | val 1.72884 | AUC 0.6471 | lr 0.018423 | mom 0.986 | 41.9 min
+epoca  193 | train 0.97247 | val 0.70567 | AUC 0.6801 | lr 0.018328 | mom 0.986 | 42.1 min
+epoca  194 | train 1.05438 | val 0.92280 | AUC 0.6815 | lr 0.018233 | mom 0.987 | 42.3 min
+epoca  195 | train 1.01623 | val 1.74152 | AUC 0.6618 | lr 0.018138 | mom 0.987 | 42.6 min
+epoca  196 | train 1.18653 | val 1.90898 | AUC 0.6390 | lr 0.018044 | mom 0.988 | 42.8 min
+epoca  197 | train 1.14593 | val 0.88236 | AUC 0.6532 | lr 0.017951 | mom 0.988 | 43.0 min
+epoca  198 | train 1.06728 | val 0.83346 | AUC 0.6471 | lr 0.017857 | mom 0.989 | 43.2 min
+epoca  199 | train 1.18256 | val 0.80856 | AUC 0.5342 | lr 0.017765 | mom 0.989 | 43.4 min
+epoca  200 | train 1.17484 | val 0.70672 | AUC 0.6202 | lr 0.017673 | mom 0.990 | 43.6 min
+epoca  201 | train 1.53840 | val 1.13551 | AUC 0.6138 | lr 0.017581 | mom 0.990 | 43.9 min
+
+Fermato: nessun miglioramento da 10 epoche.
+
+Migliore perdita di validation: 0.51343
+Epoche eseguite: 201
+Tempo totale: 43.9 min
+
+[seme 4] TEST: perdita 0.51214, AUC 0.8238
+[seme 2] gia' completato, AUC = 0.8245
+
+============================================================
+deep_low: AUC = 0.8233 (0.0008)
+semi inclusi  : [0, 1, 2, 3, 4]
+valori singoli: [0.8229, 0.8227, 0.8245, 0.8227, 0.8238]
+epoche         : [201, 201, 201, 201, 201]
+============================================================
