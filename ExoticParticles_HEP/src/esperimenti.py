@@ -69,8 +69,28 @@ SEMI = [0, 1, 2, 3, 4]       # 5 inizializzazioni casuali, come nel paper
 # di prova (o viceversa) senza accorgersene.
 PICCOLO = False
 
-# Parametri dei dati (dataset completo)
-N_TRAIN = 2_600_000
+# --- Parametri dei dati (dataset completo) --------------------------------
+#
+# Il file UCI contiene 11.000.000 di eventi. Il paper ne mette da parte
+# 500.000 per la validation e 500.000 per il test, quindi il training usa
+# tutto il resto: 10 milioni.
+#
+# I 2.600.000 che compaiono nel paper NON sono il training set finale: sono
+# il sottoinsieme usato per la sola scelta degli iperparametri (dove la
+# validation era di 100.000 eventi, non 500.000).
+#
+# La differenza non e' solo "piu' dati". Il learning rate decade di un
+# fattore fisso ad OGNI aggiornamento di batch, quindi il numero di eventi
+# determina quanto e' sceso il learning rate quando il momentum satura
+# all'epoca 200:
+#
+#     2.6M ->  26.000 aggiornamenti/epoca -> lr(200) ~ 0.018
+#      10M -> 100.000 aggiornamenti/epoca -> lr(200) ~ 0.0009
+#
+# Con 2.6M il passo effettivo, amplificato dal momentum di 1/(1-0.99)=100,
+# diventa cosi' grande da far divergere la rete intorno all'epoca 170.
+# Con 10M il learning rate e' gia' crollato e il training resta stabile.
+N_TRAIN = 10_000_000
 N_VAL = 500_000
 N_TEST = 500_000
 
@@ -277,6 +297,7 @@ def main():
         storia["minuti"] = round((time.time() - t0) / 60, 1)
         storia["stack"] = STACK
         storia["n_epoche"] = len(storia["perdita_val"])
+        storia["n_train"] = N_TRAIN
         storia["piccolo"] = PICCOLO
         with open(str(base) + "_storia.json", "w") as f:
             json.dump(storia, f)
