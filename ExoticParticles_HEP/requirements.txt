@@ -13,3 +13,6 @@ matplotlib==3.11.0
 #     serve CUDA 12.8+ nella build, altrimenti la GPU non viene riconosciuta
 #     pip install torch --index-url https://download.pytorch.org/whl/cu128
 torch==2.13.0
+
+tensorboard==2.21.0
+hyperopt==0.2.7
