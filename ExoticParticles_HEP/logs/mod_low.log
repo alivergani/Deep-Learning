@@ -1,0 +1,28 @@
+============================================================
+Configurazione : deep_low
+Stack          : moderno  (relu + adamw)
+Semi           : [0]
+Eventi train   : 10,000,000
+Batch          : 100
+Epoche massime : 300
+Risultati in   : results/moderno/
+Log TensorBoard: runs/moderno/
+============================================================
+
+feature set : low  (21 colonne)
+  train : 10,000,000 eventi
+  val   :   500,000 eventi
+  test  :   500,000 eventi
+  colonne riscalate a media 1 (positive) : 6
+  colonne standardizzate a media 0       : 15
+
+
+------------------------------------------------------------
+[seme 0] inizio
+------------------------------------------------------------
+Addestramento su cpu, 10,000,000 eventi, batch da 100
+Ottimizzatore: adamw, lr iniziale 0.0021
+100,000 aggiornamenti per epoca
+Log TensorBoard in /home/alice/Deep-Learning/ExoticParticles_HEP/runs/moderno/deep_low_seme0
+
+epoca    1 | train 0.57562 | val 0.55471 | AUC 0.7861 | lr 0.002100 | mom 0.900 | 16.7 min

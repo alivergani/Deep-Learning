@@ -1,38 +1,22 @@
 """
 Ottimizzazione degli iperparametri dello stack moderno, con TPE (hyperopt).
 
-DUE MODALITA'
--------------
-1) DEFAULT - cerca solo gli iperparametri di AdamW:
-       lr             il learning rate
-       weight_decay   la regolarizzazione
-   L'architettura resta quella del paper (4 strati da 300 unita').
-   E' la ricerca che serve al CONFRONTO FRA STACK: il confronto ha senso
-   solo a parita' di modello, altrimenti non si saprebbe a quale delle due
-   modifiche attribuire la differenza.
+COSA CERCA
+----------
+Due soli iperparametri, entrambi di AdamW:
+    lr             il learning rate
+    weight_decay   la regolarizzazione
 
-2) "arch" - cerca ANCHE l'architettura:
-       n_strati       da 2 a 8 strati nascosti
-       n_unita        da 100 a 1000 unita' per strato
-   E' una domanda diversa dalla precedente: non "quanto cambia la pratica
-   di ottimizzazione", ma "qual e' la configurazione migliore per questo
-   problema". Va tenuta separata nella discussione dei risultati.
+L'architettura NON viene ottimizzata: resta ai valori del paper. Due motivi.
+Il primo e' che il confronto fra stack ha senso solo a parita' di modello:
+se lo stack moderno avesse anche una rete diversa, non si saprebbe piu' a
+quale delle due modifiche attribuire la differenza. Il secondo e' che la
+dimensione ottima di una rete dipende da quanti dati ha, quindi quella
+trovata su un sottoinsieme non varrebbe sui 2.6 milioni di eventi veri.
 
-PERCHE' LA RICERCA E' CONGIUNTA
--------------------------------
-Nella modalita' "arch" si cercano tutti e quattro i parametri insieme,
-invece di fissare lr e weight_decay ai valori gia' trovati.
-
-Il motivo e' che il learning rate ottimo dipende dall'architettura: una
-rete a 2 strati e una a 8 non hanno lo stesso valore migliore. Fissarlo
-significherebbe confrontare architetture diverse con un learning rate
-ottimo per nessuna di esse, e il risultato direbbe piu' sul learning rate
-che sull'architettura.
-
-E' anche coerente con quanto visto a lezione: fra gli effetti degli
-iperparametri sulla capacita' del modello, il learning rate e' l'unico
-descritto come "aumenta la capacita' quando e' tarato in modo ottimale" —
-cioe' il suo valore migliore dipende da tutto il resto.
+Learning rate e weight decay invece si trasferiscono ragionevolmente bene
+fra scale diverse, ed e' per questo che ha senso cercarli su un
+sottoinsieme.
 
 SU QUANTI DATI
 --------------
@@ -41,10 +25,6 @@ vero. Con 100.000 eventi il rapporto fra parametri e dati e' 4:1 e ogni
 configurazione, senza eccezioni, va in overfitting: la ricerca finisce per
 scegliere in un regime che non somiglia a quello dei training finali. Con
 un milione il rapporto e' 1:3.5 e il problema si attenua molto.
-
-Resta comunque un limite dichiarato: i training finali usano 10 milioni di
-eventi, dieci volte tanto. Il learning rate ottimo tende a scendere al
-crescere dei dati, quindi i valori trovati sono indicativi.
 
 Il batch e' quello del paper (100). E' importante: il learning rate ottimo
 dipende fortemente dal batch, e cercarlo con un batch diverso da quello
@@ -70,14 +50,13 @@ USO
 ---
     pip install hyperopt          (se non e' gia' installato)
 
-    python src/ottimizza.py                 # deep low, solo lr e wd
-    python src/ottimizza.py high            # deep high
-    python src/ottimizza.py 30              # 30 tentativi
-    python src/ottimizza.py arch 20         # cerca anche l'architettura
+    python src/ottimizza.py              # deep low, 25 tentativi
+    python src/ottimizza.py high         # deep high
+    python src/ottimizza.py 30           # 30 tentativi
 
-Produce results_small/ottimizzazione_<feature_set>_<n>k_batch<b>[_arch].json
-Il nome contiene la configurazione, cosi' ricerche fatte con dati, batch o
-spazi diversi restano tutte su disco e sono confrontabili fra loro.
+Produce results_small/ottimizzazione_<feature_set>_<n>k_batch<b>.json
+Il nome contiene la configurazione, cosi' ricerche fatte con dati o batch
+diversi restano tutte su disco e sono confrontabili fra loro.
 """
 
 import json
@@ -91,7 +70,7 @@ from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 from data import prepara_dati
 from features import INDICI
-from models import MLP, conta_parametri
+from models import rete_profonda
 from train import addestra
 
 
@@ -102,13 +81,22 @@ from train import addestra
 FEATURE_SET = "low"
 N_TENTATIVI = 25
 
-# Se True cerca anche n_strati e n_unita. Si attiva da riga di comando
-# con l'argomento "arch".
-CERCA_ARCHITETTURA = False
-
-# Architettura del paper, usata quando NON si cerca l'architettura.
-STRATI_PAPER = 4
-UNITA_PAPER = 300
+# Lo spazio di ricerca.
+#
+# hp.loguniform campiona in scala logaritmica: significa che 1e-4 e 1e-3
+# hanno la stessa probabilita' di 1e-3 e 1e-2. E' la scala giusta per
+# questi due parametri, perche' quello che conta e' l'ordine di grandezza,
+# non la differenza assoluta: passare da 0.001 a 0.002 cambia molto,
+# passare da 0.051 a 0.052 non cambia nulla.
+#
+# Vuole gli estremi gia' come logaritmi, da qui i np.log().
+SPAZIO = {
+    "lr": hp.loguniform("lr", np.log(1e-4), np.log(1e-2)),
+    # L'intervallo del weight decay arriva molto in basso di proposito:
+    # se la ricerca converge verso 1e-6 la risposta e' "la regolarizzazione
+    # non serve", che e' essa stessa un risultato da riportare.
+    "weight_decay": hp.loguniform("weight_decay", np.log(1e-6), np.log(1e-2)),
+}
 
 # Un solo seme, uguale per tutti i tentativi: cosi' la differenza fra due
 # configurazioni viene dagli iperparametri e non dall'inizializzazione.
@@ -119,13 +107,13 @@ N_TRAIN = 1_000_000
 N_VAL = 200_000
 N_TEST = 100_000        # non usato: la ricerca non tocca mai il test set
 BATCH = 100             # lo stesso dei training finali, deve esserlo
-MAX_EPOCHE = 60
+MAX_EPOCHE = 60         # piu' dati significa piu' epoche per convergere
 PAZIENZA = 8
 
 # I primi tentativi TPE li fa a caso, per farsi un'idea dello spazio prima
 # di iniziare a sfruttare quello che ha imparato. Con meno di una decina di
 # punti il suo modello probabilistico non ha abbastanza informazione.
-TENTATIVI_CASUALI = 12
+TENTATIVI_CASUALI = 10
 
 # Se True, ogni tentativo scrive anche i log per TensorBoard.
 TENSORBOARD = True
@@ -136,58 +124,20 @@ TENSORBOARD = True
 PROGETTO = Path(__file__).resolve().parent.parent
 CARTELLA_DATI = PROGETTO / "data" / "processed"
 CARTELLA_RISULTATI = PROGETTO / "results_small"
+CARTELLA_LOG = PROGETTO / "runs_small" / "ottimizzazione"
 
 FEATURE_SET_VALIDI = ["low", "high", "complete"]
 
 for argomento in sys.argv[1:]:
     if argomento in FEATURE_SET_VALIDI:
         FEATURE_SET = argomento
-    elif argomento == "arch":
-        CERCA_ARCHITETTURA = True
     elif argomento.isdigit():
         N_TENTATIVI = int(argomento)
     else:
         raise SystemExit(
             f"Argomento non riconosciuto: '{argomento}'\n"
-            f"Attesi: {FEATURE_SET_VALIDI}, 'arch', oppure un numero."
+            f"Attesi: {FEATURE_SET_VALIDI} oppure un numero (i tentativi)."
         )
-
-
-# --- lo spazio di ricerca --------------------------------------------------
-#
-# hp.loguniform campiona in scala logaritmica: significa che 1e-4 e 1e-3
-# hanno la stessa probabilita' di 1e-3 e 1e-2. E' la scala giusta per lr e
-# weight decay, perche' quello che conta e' l'ordine di grandezza, non la
-# differenza assoluta: passare da 0.001 a 0.002 cambia molto, passare da
-# 0.051 a 0.052 non cambia nulla. Vuole gli estremi gia' come logaritmi,
-# da qui i np.log().
-#
-# hp.quniform invece campiona uniformemente su una griglia: e' quello che
-# serve per numeri interi come la profondita' e le unita' per strato.
-# Restituisce float, quindi vanno convertiti con int().
-
-SPAZIO = {
-    "lr": hp.loguniform("lr", np.log(1e-4), np.log(1e-2)),
-    # L'intervallo del weight decay arriva molto in basso di proposito:
-    # se la ricerca converge verso 1e-6 la risposta e' "la regolarizzazione
-    # non serve", che e' essa stessa un risultato da riportare.
-    "weight_decay": hp.loguniform("weight_decay", np.log(1e-6), np.log(1e-2)),
-}
-
-if CERCA_ARCHITETTURA:
-    # Profondita' fino a 8 strati: il paper si ferma a 6 (Supplementary
-    # Table 3, dove riporta 0.888 con 6 strati contro 0.880 con 5). Con la
-    # tanh andare oltre diventa difficile per la diffusione del gradiente;
-    # con ReLU e He il problema non si pone, quindi vale la pena guardare
-    # se il guadagno continua dove il paper si era fermato.
-    SPAZIO["n_strati"] = hp.quniform("n_strati", 2, 8, 1)
-    # Da 100 a 1000 unita', a passi di 100. Il paper esplorava 100-500.
-    SPAZIO["n_unita"] = hp.quniform("n_unita", 100, 1000, 100)
-
-# Sottocartella dei log distinta per le due modalita'.
-CARTELLA_LOG = PROGETTO / "runs_small" / (
-    "ottimizzazione_arch" if CERCA_ARCHITETTURA else "ottimizzazione"
-)
 
 
 # I dati si caricano UNA VOLTA SOLA, fuori dalla funzione obiettivo:
@@ -224,26 +174,11 @@ def obiettivo(parametri):
     lr = parametri["lr"]
     wd = parametri["weight_decay"]
 
-    # hp.quniform restituisce float anche per valori interi: vanno convertiti.
-    if CERCA_ARCHITETTURA:
-        n_strati = int(parametri["n_strati"])
-        n_unita = int(parametri["n_unita"])
-    else:
-        n_strati = STRATI_PAPER
-        n_unita = UNITA_PAPER
-
-    # Si costruisce MLP direttamente invece di rete_profonda, perche' qui
-    # profondita' e larghezza devono poter cambiare.
-    modello = MLP(n_input=N_INPUT, n_strati=n_strati,
-                  n_unita=n_unita, attivazione="relu")
-    n_parametri = conta_parametri(modello)
-
-    descrizione = f"lr = {lr:.2e}, wd = {wd:.2e}"
-    if CERCA_ARCHITETTURA:
-        descrizione += f", {n_strati} strati x {n_unita} un. ({n_parametri:,} par.)"
-    print(f"[{i:3d}/{N_TENTATIVI}] {descrizione}", flush=True)
+    print(f"[{i:3d}/{N_TENTATIVI}] lr = {lr:.2e}, weight_decay = {wd:.2e}", flush=True)
 
     t0 = time.time()
+
+    modello = rete_profonda(n_input=N_INPUT, attivazione="relu")
 
     logdir = None
     if TENSORBOARD:
@@ -282,9 +217,6 @@ def obiettivo(parametri):
         "auc": float(auc),
         "lr": float(lr),
         "weight_decay": float(wd),
-        "n_strati": n_strati,
-        "n_unita": n_unita,
-        "n_parametri": n_parametri,
         "epoca_scelta": epoca_scelta + 1,
         "n_epoche": len(storia["auc_val"]),
         "minuti": round(minuti, 2),
@@ -294,21 +226,13 @@ def obiettivo(parametri):
 def main():
     CARTELLA_RISULTATI.mkdir(parents=True, exist_ok=True)
 
-    print("=" * 72)
-    if CERCA_ARCHITETTURA:
-        print(f"Ottimizzazione ARCHITETTURA + iperparametri - {FEATURE_SET}, "
-              f"stack moderno")
-        print(f"Spazio           : {2}-{8} strati, {100}-{1000} unita', "
-              f"lr e weight decay")
-    else:
-        print(f"Ottimizzazione iperparametri - deep {FEATURE_SET}, stack moderno")
-        print(f"Architettura     : {STRATI_PAPER} strati x {UNITA_PAPER} unita' "
-              f"(quella del paper, fissa)")
+    print("=" * 64)
+    print(f"Ottimizzazione iperparametri - deep {FEATURE_SET}, stack moderno")
     print(f"Tentativi        : {N_TENTATIVI} (di cui {TENTATIVI_CASUALI} casuali)")
     print(f"Eventi train     : {N_TRAIN:,}  (batch {BATCH})")
     print(f"Epoche massime   : {MAX_EPOCHE}")
     print(f"Seme fisso       : {SEME}")
-    print("=" * 72)
+    print("=" * 64)
     print()
 
     # Trials conserva lo storico completo della ricerca: ogni tentativo con
@@ -343,9 +267,6 @@ def main():
             "tentativo": k,
             "lr": risultato["lr"],
             "weight_decay": risultato["weight_decay"],
-            "n_strati": risultato["n_strati"],
-            "n_unita": risultato["n_unita"],
-            "n_parametri": risultato["n_parametri"],
             "auc": risultato["auc"],
             "epoca_scelta": risultato["epoca_scelta"],
             "n_epoche": risultato["n_epoche"],
@@ -355,19 +276,10 @@ def main():
     indice_migliore = int(np.argmin([t["loss"] for t in trials.results]))
     migliore = tentativi[indice_migliore]
 
-    spazio_descritto = {
-        "lr": [1e-4, 1e-2],
-        "weight_decay": [1e-6, 1e-2],
-    }
-    if CERCA_ARCHITETTURA:
-        spazio_descritto["n_strati"] = [2, 8]
-        spazio_descritto["n_unita"] = [100, 1000]
-
     uscita = {
         "feature_set": FEATURE_SET,
         "modello": "deep",
         "stack": "moderno",
-        "cerca_architettura": CERCA_ARCHITETTURA,
         "n_tentativi": N_TENTATIVI,
         "n_tentativi_casuali": TENTATIVI_CASUALI,
         "seme": SEME,
@@ -376,16 +288,17 @@ def main():
         "batch": BATCH,
         "max_epoche": MAX_EPOCHE,
         "minuti_totali": round(minuti_totali, 1),
-        "spazio": spazio_descritto,
+        "spazio": {
+            "lr": [1e-4, 1e-2],
+            "weight_decay": [1e-6, 1e-2],
+        },
         "migliore": migliore,
         "tentativi": tentativi,
     }
 
-    # Il nome contiene la configurazione: cosi' ricerche fatte con dati,
-    # batch o spazi diversi non si sovrascrivono mai.
+    # Il nome contiene la configurazione: cosi' ricerche fatte con dati o
+    # batch diversi non si sovrascrivono mai, e restano confrontabili.
     etichetta = f"{N_TRAIN // 1000}k_batch{BATCH}"
-    if CERCA_ARCHITETTURA:
-        etichetta += "_arch"
     percorso = CARTELLA_RISULTATI / f"ottimizzazione_{FEATURE_SET}_{etichetta}.json"
 
     with open(percorso, "w") as f:
@@ -393,49 +306,33 @@ def main():
 
     # --- riepilogo a schermo ----------------------------------------------
     print()
-    print("=" * 72)
+    print("=" * 64)
     print("MIGLIORE CONFIGURAZIONE")
-    print("=" * 72)
+    print("=" * 64)
     print(f"  learning rate : {migliore['lr']:.3e}")
     print(f"  weight decay  : {migliore['weight_decay']:.3e}")
-    if CERCA_ARCHITETTURA:
-        print(f"  architettura  : {migliore['n_strati']} strati x "
-              f"{migliore['n_unita']} unita'")
-        print(f"  parametri     : {migliore['n_parametri']:,}")
     print(f"  AUC           : {migliore['auc']:.4f}")
     print(f"  tentativo n.  : {migliore['tentativo']} di {N_TENTATIVI}")
+    print()
+    print(f"  (default attuali: lr 1e-3, weight_decay 1e-4)")
     print()
 
     # I cinque migliori: se sono tutti vicini fra loro, il risultato e'
     # robusto; se sono sparsi, la superficie e' piatta e la scelta conta poco.
     ordinati = sorted(tentativi, key=lambda t: -t["auc"])[:5]
     print("  I cinque migliori:")
-    if CERCA_ARCHITETTURA:
-        print(f"  {'lr':>10}  {'wd':>10}  {'strati':>7}  {'unita':>6}  "
-              f"{'AUC':>7}  {'epoche':>7}")
-        for t in ordinati:
-            print(f"  {t['lr']:10.2e}  {t['weight_decay']:10.2e}  "
-                  f"{t['n_strati']:7d}  {t['n_unita']:6d}  "
-                  f"{t['auc']:7.4f}  {t['n_epoche']:7d}")
-    else:
-        print(f"  {'lr':>10}  {'wd':>10}  {'AUC':>7}  {'epoche':>7}")
-        for t in ordinati:
-            print(f"  {t['lr']:10.2e}  {t['weight_decay']:10.2e}  "
-                  f"{t['auc']:7.4f}  {t['n_epoche']:7d}")
+    print(f"  {'lr':>10}  {'wd':>10}  {'AUC':>7}  {'epoche':>7}")
+    for t in ordinati:
+        print(f"  {t['lr']:10.2e}  {t['weight_decay']:10.2e}  "
+              f"{t['auc']:7.4f}  {t['n_epoche']:7d}")
 
     print()
     print(f"Tempo totale: {minuti_totali:.1f} min")
     print(f"Salvato in {percorso.name}")
-    print("=" * 72)
+    print("=" * 64)
     print()
-    print(f"NOTA: valori trovati su {N_TRAIN:,} eventi; i training finali ne")
-    print(f"usano 10.000.000 ({10_000_000 / N_TRAIN:.0f} volte tanto). Il learning")
-    print("rate ottimo tende a scendere al crescere dei dati: valori indicativi.")
-    if CERCA_ARCHITETTURA:
-        print()
-        print("NOTA: con MAX_EPOCHE fissato, le reti piu' grandi hanno meno")
-        print("epoche di quante ne servirebbero. Il risultato va letto come")
-        print("'migliore architettura a parita' di budget di epoche'.")
+    print(f"NOTA: valori trovati su {N_TRAIN:,} eventi; i training finali ne usano")
+    print("10M. Il learning rate ottimo tende a scendere al crescere dei dati.")
 
 
 if __name__ == "__main__":
