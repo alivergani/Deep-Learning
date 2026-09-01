@@ -332,7 +332,7 @@ def main():
     print("=" * 64)
     print()
     print(f"NOTA: valori trovati su {N_TRAIN:,} eventi; i training finali ne usano")
-    print("2.600.000. Il learning rate ottimo tende a scendere al crescere dei dati.")
+    print("10M. Il learning rate ottimo tende a scendere al crescere dei dati.")
 
 
 if __name__ == "__main__":
