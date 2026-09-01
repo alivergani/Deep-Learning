@@ -63,3 +63,39 @@ Seme fisso       : 0
 [ 24/30] lr = 6.08e-03, weight_decay = 1.04e-03
           AUC = 0.8058  (epoca 56 di 60, 184.8 min)
 [ 25/30] lr = 2.37e-03, weight_decay = 3.22e-03
+          AUC = 0.8233  (epoca 48 di 56, 168.1 min)
+[ 26/30] lr = 3.72e-03, weight_decay = 9.36e-03
+          AUC = 0.8191  (epoca 57 di 60, 190.5 min)
+[ 27/30] lr = 9.93e-03, weight_decay = 4.48e-04
+          AUC = 0.7910  (epoca 59 di 60, 190.3 min)
+[ 28/30] lr = 6.25e-04, weight_decay = 1.19e-03
+          AUC = 0.7988  (epoca 11 di 19, 30.6 min)
+[ 29/30] lr = 2.98e-04, weight_decay = 1.08e-06
+          AUC = 0.7869  (epoca 11 di 19, 16.3 min)
+[ 30/30] lr = 1.33e-03, weight_decay = 7.51e-04
+          AUC = 0.8076  (epoca 18 di 26, 62.5 min)
+
+================================================================
+MIGLIORE CONFIGURAZIONE
+================================================================
+  learning rate : 2.100e-03
+  weight decay  : 9.757e-03
+  AUC           : 0.8371
+  tentativo n.  : 18 di 30
+
+  (default attuali: lr 1e-3, weight_decay 1e-4)
+
+  I cinque migliori:
+          lr          wd      AUC   epoche
+    2.10e-03    9.76e-03   0.8371       56
+    1.76e-03    9.85e-03   0.8339       44
+    9.65e-04    8.99e-03   0.8298       41
+    2.88e-03    9.81e-03   0.8251       60
+    2.37e-03    3.22e-03   0.8233       56
+
+Tempo totale: 2991.1 min
+Salvato in ottimizzazione_low_1000k_batch100.json
+================================================================
+
+NOTA: valori trovati su 1,000,000 eventi; i training finali ne usano
+2.600.000. Il learning rate ottimo tende a scendere al crescere dei dati.

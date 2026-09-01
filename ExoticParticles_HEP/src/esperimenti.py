@@ -117,7 +117,7 @@ PROGETTO = Path(__file__).resolve().parent.parent
 # Si riconoscono dal valore, quindi l'ordine non conta:
 #     "deep" / "shallow"            -> il modello
 #     "low" / "high" / "complete"   -> il feature set
-#     "2014" / "moderno"            -> lo stack
+#     "2014" / "moderno"            -> lo stack, se non metti nulla è la riproduzione del paper
 #     "small"                       -> dataset ridotto, risultati separati
 #     numeri                        -> i semi da addestrare
 #
