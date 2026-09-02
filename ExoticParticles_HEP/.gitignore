@@ -5,4 +5,4 @@ results_small/
 runs/
 runs_small/
 *.pt
-.ipynb_checkpoints/
+.ipynb_checkpoints/logs/

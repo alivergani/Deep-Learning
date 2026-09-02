@@ -1,0 +1,22 @@
+{
+  "modello": "deep",
+  "feature_set": "low",
+  "stack": "moderno",
+  "attivazione": "relu",
+  "ottimizzatore": "adamw",
+  "piccolo": false,
+  "n_input": 21,
+  "n_train": 10000000,
+  "batch": 100,
+  "semi": [
+    0
+  ],
+  "auc_test": [
+    0.8581400852545751
+  ],
+  "auc_medio": 0.8581400852545751,
+  "auc_dev_std": null,
+  "n_epoche": [
+    209
+  ]
+}
