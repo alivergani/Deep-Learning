@@ -88,7 +88,7 @@ N_PROBE_TEST = 50_000        # per misurare l'R^2 su dati mai visti
 # Con numeri diversi la rete riceverebbe dati normalizzati in modo diverso
 # da come e' stata addestrata, e i risultati sarebbero sbagliati senza che
 # nulla segnali l'errore.
-N_TRAIN = 2_600_000
+N_TRAIN = 10_000_000
 N_VAL = 500_000
 N_TEST = 500_000
 
@@ -96,7 +96,7 @@ N_TEST = 500_000
 # Con 300 variabili molto correlate fra loro una regressione lineare
 # semplice e' instabile: la ridge penalizza i coefficienti grandi e
 # rende la soluzione ben definita.
-ALPHA = 1.0
+ALPHA = 10
 
 # ---------------------------------------------------------------------------
 
