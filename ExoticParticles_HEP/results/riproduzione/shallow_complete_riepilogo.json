@@ -1,0 +1,22 @@
+{
+  "modello": "shallow",
+  "feature_set": "complete",
+  "stack": "2014",
+  "attivazione": "tanh",
+  "ottimizzatore": "sgd",
+  "piccolo": false,
+  "n_input": 28,
+  "n_train": 10000000,
+  "batch": 100,
+  "semi": [
+    0
+  ],
+  "auc_test": [
+    0.8116059798647869
+  ],
+  "auc_medio": 0.8116059798647869,
+  "auc_dev_std": null,
+  "n_epoche": [
+    226
+  ]
+}
