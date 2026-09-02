@@ -6,3 +6,5 @@ runs/
 runs_small/
 *.pt
 .ipynb_checkpoints/logs/
+logs/
+*.swp
