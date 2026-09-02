@@ -8,3 +8,4 @@ runs_small/
 .ipynb_checkpoints/logs/
 logs/
 *.swp
+dati_tensorboard/*

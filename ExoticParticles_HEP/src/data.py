@@ -17,7 +17,7 @@ CARTELLA_DATI = PROGETTO / "data" / "processed"
 # con quelli della letteratura.
 N_TEST = 500_000
 N_VAL = 500_000
-N_TRAIN = 2_600_000
+N_TRAIN = 2_600_000 # valore di default per la ricerca degli iperparametri nel paper
 
 # ---------------------------------------------------------------------------
 
