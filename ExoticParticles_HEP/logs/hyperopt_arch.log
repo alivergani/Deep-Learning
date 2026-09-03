@@ -1,0 +1,87 @@
+Caricamento dati...
+feature set : low  (21 colonne)
+  train : 1,000,000 eventi
+  val   :   200,000 eventi
+  test  :   100,000 eventi
+  colonne riscalate a media 1 (positive) : 6
+  colonne standardizzate a media 0       : 15
+
+========================================================================
+Ottimizzazione ARCHITETTURA + iperparametri - low, stack moderno
+Spazio           : 2-8 strati, 100-1000 unita', lr e weight decay
+Tentativi        : 20 (di cui 12 casuali)
+Eventi train     : 1,000,000  (batch 100)
+Epoche massime   : 60
+Seme fisso       : 0
+========================================================================
+
+[  1/20] lr = 4.68e-03, wd = 5.36e-04, 3 strati x 300 un. (187,501 par.)
+          AUC = 0.8039  (epoca 59 di 60, 5.8 min)
+[  2/20] lr = 1.37e-03, wd = 2.03e-03, 3 strati x 300 un. (187,501 par.)
+          AUC = 0.8098  (epoca 26 di 34, 3.1 min)
+[  3/20] lr = 5.59e-04, wd = 5.87e-05, 4 strati x 700 un. (1,488,201 par.)
+          AUC = 0.7973  (epoca 7 di 15, 1.6 min)
+[  4/20] lr = 8.09e-04, wd = 4.34e-03, 7 strati x 400 un. (971,601 par.)
+          AUC = 0.8102  (epoca 15 di 23, 2.9 min)
+[  5/20] lr = 2.99e-03, wd = 1.53e-04, 4 strati x 900 un. (2,453,401 par.)
+          AUC = 0.7972  (epoca 24 di 32, 4.0 min)
+[  6/20] lr = 2.46e-03, wd = 9.85e-03, 7 strati x 700 un. (2,960,301 par.)
+          AUC = 0.8353  (epoca 42 di 50, 8.1 min)
+[  7/20] lr = 9.18e-03, wd = 8.28e-04, 2 strati x 1000 un. (1,024,001 par.)
+          AUC = 0.7608  (epoca 60 di 60, 5.0 min)
+[  8/20] lr = 2.20e-03, wd = 4.35e-06, 8 strati x 100 un. (73,001 par.)
+          AUC = 0.8033  (epoca 43 di 51, 6.5 min)
+[  9/20] lr = 2.69e-03, wd = 1.02e-04, 7 strati x 200 un. (245,801 par.)
+          AUC = 0.8110  (epoca 36 di 44, 5.3 min)
+[ 10/20] lr = 3.06e-04, wd = 2.17e-05, 7 strati x 500 un. (1,514,501 par.)
+          AUC = 0.7990  (epoca 10 di 18, 2.3 min)
+[ 11/20] lr = 1.28e-03, wd = 4.28e-05, 5 strati x 500 un. (1,013,501 par.)
+          AUC = 0.8067  (epoca 16 di 24, 2.6 min)
+[ 12/20] lr = 2.38e-04, wd = 2.02e-04, 6 strati x 600 un. (1,816,801 par.)
+          AUC = 0.7992  (epoca 8 di 16, 2.0 min)
+[ 13/20] lr = 1.33e-04, wd = 1.06e-06, 8 strati x 800 un. (4,504,001 par.)
+          AUC = 0.7972  (epoca 7 di 15, 3.5 min)
+[ 14/20] lr = 1.14e-04, wd = 8.99e-03, 6 strati x 1000 un. (5,028,001 par.)
+          AUC = 0.7991  (epoca 8 di 16, 3.7 min)
+[ 15/20] lr = 8.36e-03, wd = 8.27e-06, 5 strati x 700 un. (1,978,901 par.)
+          AUC = 0.7647  (epoca 58 di 60, 7.3 min)
+[ 16/20] lr = 5.88e-03, wd = 9.69e-03, 6 strati x 800 un. (3,222,401 par.)
+          AUC = 0.7888  (epoca 57 di 60, 9.8 min)
+[ 17/20] lr = 5.63e-04, wd = 1.99e-03, 4 strati x 100 un. (32,601 par.)
+          AUC = 0.8152  (epoca 50 di 58, 5.3 min)
+[ 18/20] lr = 4.70e-04, wd = 2.37e-03, 4 strati x 600 un. (1,095,601 par.)
+          AUC = 0.8011  (epoca 10 di 18, 1.8 min)
+[ 19/20] lr = 8.48e-04, wd = 6.05e-04, 3 strati x 100 un. (22,501 par.)
+          AUC = 0.8062  (epoca 45 di 53, 4.5 min)
+[ 20/20] lr = 1.72e-03, wd = 4.69e-03, 2 strati x 700 un. (506,801 par.)
+          AUC = 0.8020  (epoca 36 di 44, 3.6 min)
+
+========================================================================
+MIGLIORE CONFIGURAZIONE
+========================================================================
+  learning rate : 2.458e-03
+  weight decay  : 9.849e-03
+  architettura  : 7 strati x 700 unita'
+  parametri     : 2,960,301
+  AUC           : 0.8353
+  tentativo n.  : 6 di 20
+
+  I cinque migliori:
+          lr          wd   strati   unita      AUC   epoche
+    2.46e-03    9.85e-03        7     700   0.8353       50
+    5.63e-04    1.99e-03        4     100   0.8152       58
+    2.69e-03    1.02e-04        7     200   0.8110       44
+    8.09e-04    4.34e-03        7     400   0.8102       23
+    1.37e-03    2.03e-03        3     300   0.8098       34
+
+Tempo totale: 88.9 min
+Salvato in ottimizzazione_low_1000k_batch100_arch.json
+========================================================================
+
+NOTA: valori trovati su 1,000,000 eventi; i training finali ne
+usano 10.000.000 (10 volte tanto). Il learning
+rate ottimo tende a scendere al crescere dei dati: valori indicativi.
+
+NOTA: con MAX_EPOCHE fissato, le reti piu' grandi hanno meno
+epoche di quante ne servirebbero. Il risultato va letto come
+'migliore architettura a parita' di budget di epoche'.

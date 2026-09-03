@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 data/
 results_small/
+runs_small/
+*.pt
 .ipynb_checkpoints/logs/
 *.swp
 dati_tensorboard/*
