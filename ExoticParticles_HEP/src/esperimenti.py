@@ -6,15 +6,18 @@ passandola da riga di comando:
 
     python src/esperimenti.py deep low
     python src/esperimenti.py deep low moderno 0
-    python src/esperimenti.py deep low moderno small 0     (prova rapida)
+    python src/esperimenti.py deep low moderno arch 0    (arch. ottimizzata)
+    python src/esperimenti.py deep low moderno small 0   (prova rapida)
 
 Ogni seme gia' completato viene saltato, quindi si puo' rilanciare lo
 script dopo un'interruzione senza perdere il lavoro fatto.
 
-I due stack scrivono in cartelle diverse, quindi non si sovrascrivono:
+Ogni combinazione scrive in una cartella diversa, quindi non si
+sovrascrivono mai:
 
-    results/riproduzione/deep_low_seme0_modello.pt    stack 2014
-    results/moderno/deep_low_seme0_modello.pt         stack moderno
+    results/riproduzione/     stack 2014
+    results/moderno/          stack moderno, architettura del paper
+    results/moderno_arch/     stack moderno, architettura ottimizzata
 
 Con "small" cambiano INSIEME la cartella dei dati e quella dei risultati:
 i risultati di prova finiscono in results_small/ e non possono mescolarsi
@@ -41,7 +44,7 @@ import torch
 from data import prepara_dati
 from evaluate import calcola_curva, salva_curva
 from features import INDICI
-from models import rete_profonda, rete_shallow
+from models import MLP, rete_shallow
 from train import addestra, valuta
 
 
@@ -68,6 +71,23 @@ SEMI = [0, 1, 2, 3, 4]       # 5 inizializzazioni casuali, come nel paper
 # dimenticarsela accesa significherebbe lanciare un training vero sui dati
 # di prova (o viceversa) senza accorgersene.
 PICCOLO = False
+
+# Architettura ottimizzata. Si attiva da riga di comando con "arch".
+# NON fa parte del confronto fra stack, che richiede architettura identica:
+# e' l'esperimento separato "qual e' la configurazione migliore per questo
+# problema". Per questo scrive in una cartella a parte.
+ARCH_OTTIMIZZATA = False
+
+# Architettura del paper: 4 strati nascosti da 300 unita'.
+# Nota: anche la rete shallow del paper ha 300 unita' (Supplementary
+# Table 3, riga "NN 300-hidden"), non 10.000.
+N_STRATI = 4
+N_UNITA = 300
+
+# Iperparametri di addestramento. None = usa i default di train.py, che
+# dipendono dallo stack scelto.
+LR = None
+WEIGHT_DECAY = None
 
 # --- Parametri dei dati (dataset completo) --------------------------------
 #
@@ -117,16 +137,18 @@ PROGETTO = Path(__file__).resolve().parent.parent
 # Si riconoscono dal valore, quindi l'ordine non conta:
 #     "deep" / "shallow"            -> il modello
 #     "low" / "high" / "complete"   -> il feature set
-#     "2014" / "moderno"            -> lo stack, se non metti nulla è la riproduzione del paper
+#     "2014" / "moderno"            -> lo stack; senza, e' la riproduzione
+#     "arch"                        -> architettura ottimizzata
 #     "small"                       -> dataset ridotto, risultati separati
 #     numeri                        -> i semi da addestrare
 #
 # Esempi:
-#     python src/esperimenti.py                      usa i valori scritti sopra
-#     python src/esperimenti.py deep low             tutti i semi della lista
-#     python src/esperimenti.py deep low 0 1         solo i semi 0 e 1
-#     python src/esperimenti.py deep low moderno 0   stack moderno, seme 0
-#     python src/esperimenti.py deep low small 0     prova rapida
+#     python src/esperimenti.py                        valori scritti sopra
+#     python src/esperimenti.py deep low               tutti i semi della lista
+#     python src/esperimenti.py deep low 0 1           solo i semi 0 e 1
+#     python src/esperimenti.py deep low moderno 0     stack moderno, seme 0
+#     python src/esperimenti.py deep low moderno arch 0    arch. ottimizzata
+#     python src/esperimenti.py deep low small 0       prova rapida
 #
 # Per parallelizzare, due sessioni tmux:
 #     python src/esperimenti.py deep low 0 1
@@ -147,6 +169,8 @@ for argomento in sys.argv[1:]:
         STACK = argomento
     elif argomento == "small":
         PICCOLO = True
+    elif argomento == "arch":
+        ARCH_OTTIMIZZATA = True
     elif argomento.isdigit():
         semi_da_riga_comando.append(int(argomento))
     elif argomento in MODELLI_VALIDI:
@@ -157,7 +181,7 @@ for argomento in sys.argv[1:]:
         raise SystemExit(
             f"Argomento non riconosciuto: '{argomento}'\n"
             f"Attesi: {MODELLI_VALIDI}, {FEATURE_SET_VALIDI}, "
-            f"{STACK_VALIDI}, 'small', oppure numeri (i semi)."
+            f"{STACK_VALIDI}, 'arch', 'small', oppure numeri (i semi)."
         )
 
 if semi_da_riga_comando:
@@ -174,11 +198,27 @@ elif STACK == "moderno":
 else:
     raise SystemExit(f"STACK deve essere uno di {STACK_VALIDI}")
 
+# --- architettura e iperparametri ottimizzati -----------------------------
+# Valori trovati da ottimizza.py in modalita' "arch": ricerca congiunta su
+# quattro parametri (profondita', larghezza, lr, weight decay) con TPE, su
+# 1.000.000 di eventi e batch 100, 20 tentativi.
+#
+# Vanno insieme: il learning rate ottimo dipende dall'architettura, quindi
+# non ha senso prendere l'una senza l'altro.
+if ARCH_OTTIMIZZATA:
+    N_STRATI = 7
+    N_UNITA = 700
+    LR = 2.46e-3
+    WEIGHT_DECAY = 9.85e-3
+
 # --- dove leggere i dati e dove scrivere i risultati ----------------------
 # I percorsi cambiano insieme: e' l'unico modo per essere sicuri che i
 # risultati di prova non finiscano mai fra quelli veri.
-# La sottocartella dice gia' lo stack, quindi il nome del file non lo ripete.
+# La sottocartella dice gia' stack e architettura, quindi il nome del file
+# non deve ripeterli.
 SOTTOCARTELLA = "riproduzione" if STACK == "2014" else "moderno"
+if ARCH_OTTIMIZZATA:
+    SOTTOCARTELLA += "_arch"
 
 if PICCOLO:
     CARTELLA_DATI = PROGETTO / "data" / "processed_small"
@@ -206,9 +246,17 @@ NOME = f"{MODELLO}_{FEATURE_SET}"
 
 
 def costruisci_modello(n_input):
-    """Crea la rete richiesta dalla configurazione."""
+    """
+    Crea la rete richiesta dalla configurazione.
+
+    Per la rete profonda si costruisce MLP direttamente invece di
+    rete_profonda, perche' con "arch" profondita' e larghezza cambiano.
+    Con i valori di default (4 strati, 300 unita') il risultato e'
+    identico a rete_profonda.
+    """
     if MODELLO == "deep":
-        return rete_profonda(n_input=n_input, attivazione=ATTIVAZIONE)
+        return MLP(n_input=n_input, n_strati=N_STRATI,
+                   n_unita=N_UNITA, attivazione=ATTIVAZIONE)
     if MODELLO == "shallow":
         return rete_shallow(n_input=n_input, attivazione=ATTIVAZIONE)
     raise ValueError("MODELLO deve essere 'deep' oppure 'shallow'")
@@ -223,8 +271,14 @@ def main():
     print("=" * 60)
     if PICCOLO:
         print(">>> MODALITA' PROVA: dati ridotti")
+    if ARCH_OTTIMIZZATA:
+        print(">>> ARCHITETTURA OTTIMIZZATA (non fa parte del confronto stack)")
     print(f"Configurazione : {NOME}")
     print(f"Stack          : {STACK}  ({ATTIVAZIONE} + {OTTIMIZZATORE})")
+    if MODELLO == "deep":
+        print(f"Architettura   : {N_STRATI} strati x {N_UNITA} unita'")
+    if LR is not None:
+        print(f"lr / wd        : {LR:.2e} / {WEIGHT_DECAY:.2e}")
     print(f"Semi           : {SEMI}")
     print(f"Eventi train   : {N_TRAIN:,}")
     print(f"Batch          : {BATCH}")
@@ -276,6 +330,8 @@ def main():
         storia = addestra(
             modello, dati,
             batch=BATCH,
+            lr_iniziale=LR,
+            weight_decay=WEIGHT_DECAY,
             epoche_rampa=EPOCHE_RAMPA,
             max_epoche=MAX_EPOCHE,
             pazienza=PAZIENZA,
@@ -298,6 +354,9 @@ def main():
         storia["stack"] = STACK
         storia["n_epoche"] = len(storia["perdita_val"])
         storia["n_train"] = N_TRAIN
+        storia["n_strati"] = N_STRATI
+        storia["n_unita"] = N_UNITA
+        storia["arch_ottimizzata"] = ARCH_OTTIMIZZATA
         storia["piccolo"] = PICCOLO
         with open(str(base) + "_storia.json", "w") as f:
             json.dump(storia, f)
@@ -311,7 +370,7 @@ def main():
     # questo processo: cosi' il riepilogo resta corretto anche se piu' processi
     # girano in parallelo, ciascuno su un sottoinsieme di semi.
     #
-    # I due stack non si confondono perche' stanno in cartelle diverse.
+    # Le configurazioni non si confondono perche' stanno in cartelle diverse.
     semi_trovati = []
     valori_trovati = []
     epoche_trovate = []
@@ -344,6 +403,11 @@ def main():
         "stack": STACK,
         "attivazione": ATTIVAZIONE,
         "ottimizzatore": OTTIMIZZATORE,
+        "arch_ottimizzata": ARCH_OTTIMIZZATA,
+        "n_strati": N_STRATI,
+        "n_unita": N_UNITA,
+        "lr": LR,
+        "weight_decay": WEIGHT_DECAY,
         "piccolo": PICCOLO,
         "n_input": n_input,
         "n_train": N_TRAIN,
