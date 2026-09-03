@@ -3,7 +3,11 @@ __pycache__/
 data/
 results_small/
 runs_small/
-*.pt
 .ipynb_checkpoints/logs/
 *.swp
 dati_tensorboard/*
+
+*.pt
+
+!results/moderno_arch/
+!results/moderno_arch/**
