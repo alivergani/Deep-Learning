@@ -8,6 +8,3 @@ runs_small/
 dati_tensorboard/*
 
 *.pt
-
-!results/moderno_arch/
-!results/moderno_arch/**
