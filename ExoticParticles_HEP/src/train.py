@@ -123,7 +123,8 @@ BETA2 = 0.999
 # comunque al lr di scendere sotto una soglia utile.
 PLATEAU_FATTORE = 0.5
 PLATEAU_PAZIENZA = 5         # sempre piu' piccola della pazienza di stop
-PLATEAU_LR_MINIMO = 1e-5     # pavimento: sotto, la rete non impara piu'
+FRAZIONE_LR_MINIMO = 1/256
+PLATEAU_LR_MINIMO = LR_ADAMW * FRAZIONE_LR_MINIMO     # pavimento: sotto, la rete non impara piu'
 
 # ---------------------------------------------------------------------------
 # PARAMETRI comuni
