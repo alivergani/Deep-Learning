@@ -30,6 +30,12 @@ Per guardarli:
 Da remoto serve un tunnel:
     ssh -L 6006:localhost:6006 utente@macchina
 
+Registrare il learning rate ad ogni epoca si e' rivelato decisivo: e' stato
+il grafico di "ottimizzazione/learning_rate" a mostrare che nella prima
+versione dello stack moderno il lr si annullava intorno all'epoca 60, e che
+il plateau dell'AUC nelle epoche successive era una rete ferma e non una
+rete convergente. Vedi la nota "TARATURA DELLO SCHEDULER" piu' sotto.
+
 Uso tipico (da notebook):
 
     from data import prepara_dati
@@ -80,28 +86,59 @@ WEIGHT_DECAY = 1e-5          # regolarizzazione L2
 # Adam normalizza il passo con una stima della scala dei gradienti, quindi
 # lavora su learning rate molto piu' piccoli di SGD. 1e-3 e' il valore
 # standard, 0.05 farebbe divergere subito la rete.
-LR_ADAMW = 2.1e-3             # trovato con TPE su 1M eventi; era 1e-3
+LR_ADAMW = 2.1e-3             # DA AGGIORNARE con la ricerca su 3M eventi
 
 # In AdamW il weight decay e' "disaccoppiato": viene applicato ai pesi in
-# modo diretto invece di essere sommato al gradiente. A parita' di numero
-# l'effetto e' piu' forte che in SGD, per questo si usa un valore piu' alto
-# ma comunque prudente.
-WEIGHT_DECAY_ADAMW = 9.76e-3  # trovato con TPE su 1M eventi; era 1e-4
+# modo diretto invece di essere sommato al gradiente, quindi a parita' di
+# numero l'effetto e' piu' forte che in SGD.
+#
+# Il valore 9.76e-3 veniva da una ricerca su 1M di eventi e si e' rivelato
+# eccessivo sui training da 10M: l'AUC dello stack moderno saturava circa
+# un punto sotto quella dello stack 2014 su low e complete, mentre su high
+# le due coincidevano. Il divario compariva cioe' solo dove la rete deve
+# costruire funzioni non lineari dalle variabili grezze, che e' esattamente
+# la capacita' che una regolarizzazione troppo forte toglie.
+#
+# La regolarizzazione ottima diminuisce al crescere dei dati: la ricerca e'
+# stata rifatta su 3M di eventi, un terzo dei training finali invece di un
+# decimo.
+WEIGHT_DECAY_ADAMW = 9.76e-3  # DA AGGIORNARE con la ricerca su 3M eventi
 
 # beta1 e' l'analogo del momentum in Adam: qui resta fisso, non c'e' rampa.
 BETA1 = 0.9
 BETA2 = 0.999
 
+# --- TARATURA DELLO SCHEDULER ---------------------------------------------
+#
 # Quando la validation non migliora per qualche epoca, il lr viene dimezzato.
+#
+# La pazienza era 3, ed era troppo poco. ReduceLROnPlateau azzera il proprio
+# contatore ad ogni riduzione, quindi bastava che il rumore della perdita di
+# validation producesse tre epoche piatte perche' il lr si dimezzasse, e la
+# cosa poteva ripetersi molte volte nello stesso training: nei run moderni
+# il learning rate era di fatto nullo dall'epoca 60 in poi, e le decine di
+# epoche successive non modificavano piu' i pesi.
+#
+# Con pazienza 5 servono plateau piu' convincenti, e min_lr impedisce
+# comunque al lr di scendere sotto una soglia utile.
 PLATEAU_FATTORE = 0.5
-PLATEAU_PAZIENZA = 3         # sempre piu' piccola della pazienza di stop
+PLATEAU_PAZIENZA = 5         # sempre piu' piccola della pazienza di stop
+PLATEAU_LR_MINIMO = 1e-5     # pavimento: sotto, la rete non impara piu'
 
 # ---------------------------------------------------------------------------
 # PARAMETRI comuni
 # ---------------------------------------------------------------------------
 
 MAX_EPOCHE = 1000            # limite di sicurezza
-PAZIENZA = 10                # epoche senza miglioramento prima di fermarsi
+
+# La pazienza dell'early stopping era 10. Con PLATEAU_PAZIENZA = 5, dopo una
+# riduzione del lr sarebbero rimaste solo 5 epoche: troppo poche per capire
+# se il passo piu' piccolo stava aiutando. Con 15 ne restano 10, e resta
+# rispettato il vincolo che la pazienza dello scheduler sia la piu' piccola
+# delle due.
+PAZIENZA_SGD = 10       # stack 2014, invariato
+PAZIENZA_ADAMW = 15     # stack moderno
+
 MIGLIORAMENTO_MINIMO = 1e-5  # miglioramento relativo che conta come progresso
 
 # ---------------------------------------------------------------------------
@@ -156,11 +193,16 @@ def crea_ottimizzatore(modello, nome, lr, weight_decay):
         # e quindi convive bene con l'early stopping. Uno scheduler a
         # coseno, per esempio, richiederebbe di fissare prima il numero
         # totale di epoche.
+        #
+        # min_lr e' il pavimento: senza, riduzioni ripetute portano il lr a
+        # valori con cui i pesi non si muovono piu' e il training prosegue
+        # a vuoto. Vedi la nota "TARATURA DELLO SCHEDULER" in cima al file.
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             ottimizzatore,
             mode="min",
             factor=PLATEAU_FATTORE,
             patience=PLATEAU_PAZIENZA,
+            min_lr=PLATEAU_LR_MINIMO,
         )
         return ottimizzatore, scheduler
 
@@ -238,7 +280,7 @@ def addestra(modello, dati,
              lr_iniziale=None,
              epoche_rampa=EPOCHE_RAMPA,
              max_epoche=MAX_EPOCHE,
-             pazienza=PAZIENZA,
+             pazienza=None,
              weight_decay=None,
              ottimizzatore="sgd",
              dispositivo=None,
@@ -264,6 +306,9 @@ def addestra(modello, dati,
         lr_iniziale = LR_INIZIALE if ottimizzatore == "sgd" else LR_ADAMW
     if weight_decay is None:
         weight_decay = WEIGHT_DECAY if ottimizzatore == "sgd" else WEIGHT_DECAY_ADAMW
+        
+    if pazienza is None:
+        pazienza = PAZIENZA_SGD if ottimizzatore == "sgd" else PAZIENZA_ADAMW
 
     if seme is not None:
         torch.manual_seed(seme)

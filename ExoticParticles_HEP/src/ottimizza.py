@@ -36,19 +36,39 @@ cioe' il suo valore migliore dipende da tutto il resto.
 
 SU QUANTI DATI
 --------------
-Non su processed_small (100.000 eventi), ma su un sottoinsieme del dataset
-vero. Con 100.000 eventi il rapporto fra parametri e dati e' 4:1 e ogni
-configurazione, senza eccezioni, va in overfitting: la ricerca finisce per
-scegliere in un regime che non somiglia a quello dei training finali. Con
-un milione il rapporto e' 1:3.5 e il problema si attenua molto.
+Tre milioni di eventi, un terzo dei dieci milioni dei training finali.
 
-Resta comunque un limite dichiarato: i training finali usano 10 milioni di
-eventi, dieci volte tanto. Il learning rate ottimo tende a scendere al
-crescere dei dati, quindi i valori trovati sono indicativi.
+La prima ricerca era stata fatta su un milione, e il valore di weight decay
+che ne era uscito (9.8e-3) si e' rivelato eccessivo sui training veri: le
+curve di AUC dello stack moderno saturavano circa un punto sotto quelle
+dello stack 2014 sui feature set low e complete, mentre su high — dove la
+rete deve solo combinare sette masse gia' calcolate — coincidevano.
+Il divario compariva cioe' solo dove serve capacita' effettiva, che e'
+esattamente cio' che una regolarizzazione troppo forte toglie.
+
+La ragione e' che la regolarizzazione ottima diminuisce al crescere dei
+dati: con un milione di eventi il weight decay serve davvero, con dieci
+non piu'. Passando da 1 a 3 milioni il rapporto con i training finali
+scende da 10 a 3, e i valori trovati diventano trasferibili.
+
+Resta un fattore 3 dichiarato. Se il weight decay scelto risultasse ancora
+troppo alto, la direzione della correzione e' nota: verso il basso.
 
 Il batch e' quello del paper (100). E' importante: il learning rate ottimo
 dipende fortemente dal batch, e cercarlo con un batch diverso da quello
 dei training veri produrrebbe un valore non trasferibile.
+
+SUL BUDGET DI EPOCHE
+--------------------
+MAX_EPOCHE scende da 60 a 30, ma non e' un taglio: un'epoca su 3 milioni
+di eventi contiene 30.000 aggiornamenti invece di 10.000, quindi 30 epoche
+su 3M sono 900.000 passi contro i 600.000 delle 60 epoche su 1M. Ogni
+tentativo vede piu' aggiornamenti di prima, non meno.
+
+E' la quantita' che conta per il weight decay: la regolarizzazione agisce
+lentamente, e con troppi pochi passi la differenza fra un valore alto e uno
+basso non farebbe in tempo a manifestarsi. La ricerca sceglierebbe allora
+un valore quasi a caso.
 
 COSA MINIMIZZA
 --------------
@@ -57,6 +77,12 @@ davvero (quella a perdita di validation minima). Non il massimo dell'AUC
 lungo tutto il training: quello sarebbe un valore che la pipeline vera non
 restituirebbe mai, e ottimizzarlo significherebbe tarare gli iperparametri
 su un modello diverso da quello che poi si usa.
+
+Il validation set e' usato per intero (500.000 eventi). L'incertezza
+statistica sull'AUC scala come 1/sqrt(N): con 200.000 eventi era circa 1.6
+volte piu' grande, abbastanza da rendere indistinguibili due tentativi
+vicini. Il costo in tempo e' trascurabile, un forward pass contro decine di
+migliaia di passi di training.
 
 Il test set non viene mai toccato.
 
@@ -77,7 +103,9 @@ USO
 
 Produce results_small/ottimizzazione_<feature_set>_<n>k_batch<b>[_arch].json
 Il nome contiene la configurazione, cosi' ricerche fatte con dati, batch o
-spazi diversi restano tutte su disco e sono confrontabili fra loro.
+spazi diversi restano tutte su disco e sono confrontabili fra loro: la
+ricerca su 1M e quella su 3M convivono, ed e' il confronto fra le due a
+mostrare quanto il weight decay ottimo dipenda dalla dimensione dei dati.
 """
 
 import json
@@ -114,13 +142,14 @@ UNITA_PAPER = 300
 # configurazioni viene dagli iperparametri e non dall'inizializzazione.
 SEME = 0
 
-# Parametri della ricerca. Vedi la nota "SU QUANTI DATI" in cima al file.
-N_TRAIN = 1_000_000
-N_VAL = 200_000
+# Parametri della ricerca. Vedi le note "SU QUANTI DATI" e "SUL BUDGET DI
+# EPOCHE" in cima al file.
+N_TRAIN = 3_000_000
+N_VAL = 500_000
 N_TEST = 100_000        # non usato: la ricerca non tocca mai il test set
 BATCH = 100             # lo stesso dei training finali, deve esserlo
-MAX_EPOCHE = 60
-PAZIENZA = 8
+MAX_EPOCHE = 30
+PAZIENZA = 10
 
 # I primi tentativi TPE li fa a caso, per farsi un'idea dello spazio prima
 # di iniziare a sfruttare quello che ha imparato. Con meno di una decina di
@@ -170,7 +199,9 @@ SPAZIO = {
     "lr": hp.loguniform("lr", np.log(1e-4), np.log(1e-2)),
     # L'intervallo del weight decay arriva molto in basso di proposito:
     # se la ricerca converge verso 1e-6 la risposta e' "la regolarizzazione
-    # non serve", che e' essa stessa un risultato da riportare.
+    # non serve", che e' essa stessa un risultato da riportare. Con 3
+    # milioni di eventi e' anche l'esito piu' probabile, ed e' il motivo per
+    # cui l'estremo inferiore non e' stato alzato.
     "weight_decay": hp.loguniform("weight_decay", np.log(1e-6), np.log(1e-2)),
 }
 
@@ -306,7 +337,9 @@ def main():
               f"(quella del paper, fissa)")
     print(f"Tentativi        : {N_TENTATIVI} (di cui {TENTATIVI_CASUALI} casuali)")
     print(f"Eventi train     : {N_TRAIN:,}  (batch {BATCH})")
-    print(f"Epoche massime   : {MAX_EPOCHE}")
+    print(f"Eventi val       : {N_VAL:,}")
+    print(f"Epoche massime   : {MAX_EPOCHE}  "
+          f"(~{N_TRAIN // BATCH * MAX_EPOCHE:,} aggiornamenti per tentativo)")
     print(f"Seme fisso       : {SEME}")
     print("=" * 72)
     print()
@@ -429,8 +462,9 @@ def main():
     print("=" * 72)
     print()
     print(f"NOTA: valori trovati su {N_TRAIN:,} eventi; i training finali ne")
-    print(f"usano 10.000.000 ({10_000_000 / N_TRAIN:.0f} volte tanto). Il learning")
-    print("rate ottimo tende a scendere al crescere dei dati: valori indicativi.")
+    print(f"usano 10.000.000 ({10_000_000 / N_TRAIN:.0f} volte tanto). Learning")
+    print("rate e weight decay ottimi tendono a scendere al crescere dei dati:")
+    print("i valori trovati sono, se mai, leggermente per eccesso.")
     if CERCA_ARCHITETTURA:
         print()
         print("NOTA: con MAX_EPOCHE fissato, le reti piu' grandi hanno meno")
