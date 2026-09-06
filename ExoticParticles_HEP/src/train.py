@@ -123,8 +123,23 @@ BETA2 = 0.999
 # comunque al lr di scendere sotto una soglia utile.
 PLATEAU_FATTORE = 0.5
 PLATEAU_PAZIENZA = 5         # sempre piu' piccola della pazienza di stop
-FRAZIONE_LR_MINIMO = 1/256
-PLATEAU_LR_MINIMO = LR_ADAMW * FRAZIONE_LR_MINIMO     # pavimento: sotto, la rete non impara piu'
+
+# Il pavimento del learning rate e' una FRAZIONE del lr di partenza, non un
+# numero fisso: viene calcolato dentro crea_ottimizzatore a partire dal lr
+# che quel training usa davvero.
+#
+# La versione precedente lo fissava a LR_ADAMW/256, cioe' allo stesso valore
+# per tutti. Nei training finali non cambiava nulla, perche' il lr di
+# partenza e' sempre LR_ADAMW; durante la ricerca degli iperparametri invece
+# il lr varia di due ordini di grandezza, e un pavimento fisso avrebbe
+# concesso a un tentativo con lr = 1e-2 una decina di dimezzamenti prima di
+# toccarlo, e a uno con lr = 1e-4 meno di quattro. Sarebbero stati due
+# schedule diversi, e la ricerca avrebbe confrontato anche quelli invece
+# del solo learning rate.
+#
+# 1/256 sono otto dimezzamenti: oltre, il passo e' cosi' piccolo che il
+# training prosegue senza muovere piu' i pesi.
+FRAZIONE_LR_MINIMO = 1 / 256
 
 # ---------------------------------------------------------------------------
 # PARAMETRI comuni
@@ -203,7 +218,7 @@ def crea_ottimizzatore(modello, nome, lr, weight_decay):
             mode="min",
             factor=PLATEAU_FATTORE,
             patience=PLATEAU_PAZIENZA,
-            min_lr=PLATEAU_LR_MINIMO,
+            min_lr=lr * FRAZIONE_LR_MINIMO,
         )
         return ottimizzatore, scheduler
 

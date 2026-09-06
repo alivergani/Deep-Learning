@@ -342,25 +342,66 @@ def obiettivo(parametri):
     if TENSORBOARD:
         logdir = str(CARTELLA_LOG / f"{FEATURE_SET}_tentativo{i:03d}")
 
-    storia = addestra(
-        modello, DATI,
-        batch=BATCH,
-        lr_iniziale=lr,
-        weight_decay=wd,
-        max_epoche=MAX_EPOCHE,
-        pazienza=PAZIENZA,
-        ottimizzatore="adamw",
-        seme=SEME,
-        logdir=logdir,
-        silenzioso=True,
-    )
+    # --- il tentativo, protetto -------------------------------------------
+    # Con learning rate fino a 1e-2 un tentativo puo' divergere. Se succede,
+    # la perdita diventa NaN, l'AUC pure, e hyperopt riceve una "loss" non
+    # finita: fmin si ferma con un errore e una ricerca di ore muore a meta'.
+    #
+    # Qui il tentativo fallito viene invece registrato come AUC 0.5, cioe' il
+    # valore di una rete che tira a indovinare. E' la cosa giusta da fare
+    # anche nel merito: TPE impara che quella zona dello spazio non funziona
+    # e smette di andarci, che e' esattamente il comportamento voluto.
+    try:
+        storia = addestra(
+            modello, DATI,
+            batch=BATCH,
+            lr_iniziale=lr,
+            weight_decay=wd,
+            max_epoche=MAX_EPOCHE,
+            pazienza=PAZIENZA,
+            ottimizzatore="adamw",
+            seme=SEME,
+            logdir=logdir,
+            silenzioso=True,
+        )
 
-    # --- l'epoca che l'early stopping sceglierebbe -------------------------
-    # I pesi finali sono quelli dell'epoca a perdita di validation minima,
-    # quindi e' l'AUC di QUELLA epoca a rappresentare il modello che si
-    # otterrebbe davvero.
-    epoca_scelta = int(np.argmin(storia["perdita_val"]))
-    auc = storia["auc_val"][epoca_scelta]
+        # --- l'epoca che l'early stopping sceglierebbe ---------------------
+        # I pesi finali sono quelli dell'epoca a perdita di validation
+        # minima, quindi e' l'AUC di QUELLA epoca a rappresentare il modello
+        # che si otterrebbe davvero.
+        #
+        # (Non coincide al millesimo con l'epoca salvata da addestra, che
+        # richiede un miglioramento relativo di MIGLIORAMENTO_MINIMO per
+        # aggiornare i pesi migliori. La differenza e' trascurabile, ma vale
+        # la pena saperlo.)
+        epoca_scelta = int(np.argmin(storia["perdita_val"]))
+        auc = storia["auc_val"][epoca_scelta]
+
+        if not np.isfinite(auc):
+            raise ValueError("AUC non finita")
+
+    except Exception as errore:
+        minuti = (time.time() - t0) / 60
+        print(f"          FALLITO ({errore}) - registrato come AUC 0.5, "
+              f"{minuti:.1f} min", flush=True)
+
+        fallito = {
+            "tentativo": i,
+            "lr": float(lr),
+            "weight_decay": float(wd),
+            "n_strati": n_strati,
+            "n_unita": n_unita,
+            "n_parametri": n_parametri,
+            "auc": 0.5,
+            "epoca_scelta": 0,
+            "n_epoche": 0,
+            "minuti": round(minuti, 2),
+            "fallito": True,
+        }
+        TENTATIVI.append(fallito)
+        scrivi_risultati(completo=False)
+
+        return {"loss": 0.5, "status": STATUS_OK, **fallito}
 
     minuti = (time.time() - t0) / 60
 

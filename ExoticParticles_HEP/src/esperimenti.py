@@ -45,7 +45,10 @@ from data import prepara_dati
 from evaluate import calcola_curva, salva_curva
 from features import INDICI
 from models import MLP, rete_shallow
-from train import addestra, valuta
+from train import (addestra, valuta,
+                   LR_INIZIALE, LR_ADAMW,
+                   WEIGHT_DECAY as WD_SGD, WEIGHT_DECAY_ADAMW,
+                   PAZIENZA_SGD, PAZIENZA_ADAMW)
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +121,16 @@ N_TEST = 500_000
 BATCH = 100
 EPOCHE_RAMPA = 200           # usato solo dallo stack 2014
 MAX_EPOCHE = 300
-PAZIENZA = 10
+
+# None = la decide train.py in base allo stack: 10 per SGD (il valore del
+# paper, invariato) e 15 per AdamW.
+#
+# Qui c'era un 10 fisso, e annullava la distinzione: lo stack moderno usa
+# uno scheduler che dimezza il lr dopo 5 epoche di plateau, quindi con una
+# pazienza di stop di 10 restavano solo 5 epoche per capire se il passo piu'
+# piccolo stava aiutando, e il training si fermava troppo presto. Il valore
+# passato esplicitamente da qui vinceva su quello di train.py.
+PAZIENZA = None
 
 N_THREAD = 2                 # 0 = lascia decidere a PyTorch
 
@@ -211,6 +223,26 @@ if ARCH_OTTIMIZZATA:
     LR = 2.46e-3
     WEIGHT_DECAY = 9.85e-3
 
+
+# --- i valori davvero usati -----------------------------------------------
+# LR, WEIGHT_DECAY e PAZIENZA sono spesso None, cioe' "usa il default dello
+# stack". Qui si risolvono i None una volta sola, prima del training.
+#
+# Serve per due motivi. Il primo e' che finiscono stampati a schermo e quindi
+# nel log: se all'orale si discute con quali iperparametri e' stato fatto un
+# run, la risposta e' nel file invece che da ricostruire a mente. Il secondo
+# e' che vengono salvati nel JSON: le costanti di train.py cambiano quando si
+# rifa' la ricerca, e senza questo un risultato vecchio e uno nuovo sarebbero
+# indistinguibili guardando i loro file.
+if OTTIMIZZATORE == "sgd":
+    LR_USATO = LR if LR is not None else LR_INIZIALE
+    WD_USATO = WEIGHT_DECAY if WEIGHT_DECAY is not None else WD_SGD
+    PAZIENZA_USATA = PAZIENZA if PAZIENZA is not None else PAZIENZA_SGD
+else:
+    LR_USATO = LR if LR is not None else LR_ADAMW
+    WD_USATO = WEIGHT_DECAY if WEIGHT_DECAY is not None else WEIGHT_DECAY_ADAMW
+    PAZIENZA_USATA = PAZIENZA if PAZIENZA is not None else PAZIENZA_ADAMW
+
 # --- dove leggere i dati e dove scrivere i risultati ----------------------
 # I percorsi cambiano insieme: e' l'unico modo per essere sicuri che i
 # risultati di prova non finiscano mai fra quelli veri.
@@ -277,8 +309,8 @@ def main():
     print(f"Stack          : {STACK}  ({ATTIVAZIONE} + {OTTIMIZZATORE})")
     if MODELLO == "deep":
         print(f"Architettura   : {N_STRATI} strati x {N_UNITA} unita'")
-    if LR is not None:
-        print(f"lr / wd        : {LR:.2e} / {WEIGHT_DECAY:.2e}")
+    print(f"lr / wd        : {LR_USATO:.2e} / {WD_USATO:.2e}")
+    print(f"Pazienza stop  : {PAZIENZA_USATA}")
     print(f"Semi           : {SEMI}")
     print(f"Eventi train   : {N_TRAIN:,}")
     print(f"Batch          : {BATCH}")
@@ -356,6 +388,13 @@ def main():
         storia["n_train"] = N_TRAIN
         storia["n_strati"] = N_STRATI
         storia["n_unita"] = N_UNITA
+        # NB: "lr_iniziale", non "lr". La chiave "lr" esiste gia' ed e' la
+        # lista dei learning rate epoca per epoca, quella che serve per il
+        # grafico dello scheduler: sovrascriverla con un singolo numero la
+        # distruggerebbe.
+        storia["lr_iniziale"] = float(LR_USATO)
+        storia["weight_decay"] = float(WD_USATO)
+        storia["pazienza"] = PAZIENZA_USATA
         storia["arch_ottimizzata"] = ARCH_OTTIMIZZATA
         storia["piccolo"] = PICCOLO
         with open(str(base) + "_storia.json", "w") as f:
@@ -406,8 +445,9 @@ def main():
         "arch_ottimizzata": ARCH_OTTIMIZZATA,
         "n_strati": N_STRATI,
         "n_unita": N_UNITA,
-        "lr": LR,
-        "weight_decay": WEIGHT_DECAY,
+        "lr": float(LR_USATO),
+        "weight_decay": float(WD_USATO),
+        "pazienza": PAZIENZA_USATA,
         "piccolo": PICCOLO,
         "n_input": n_input,
         "n_train": N_TRAIN,

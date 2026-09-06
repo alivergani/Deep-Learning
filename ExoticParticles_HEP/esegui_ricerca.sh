@@ -3,9 +3,13 @@
 # Lancia la ricerca degli iperparametri dello stack moderno.
 #
 # USO
-#   ./esegui_ricerca.sh                 # low, 25 tentativi
+#   ./esegui_ricerca.sh                 # low, 25 tentativi (caso mio)
 #   ./esegui_ricerca.sh high            # high, 25 tentativi
 #   ./esegui_ricerca.sh low 10          # low, 10 tentativi (prova veloce)
+#   ./esegui_ricerca.sh high arch 20    # cerca anche l'architettura
+#
+# L'ordine degli argomenti non conta: ottimizza.py li riconosce dal loro
+# contenuto (un feature set, la parola "arch", un numero).
 #
 # Va lanciato dentro tmux, perche' dura ore:
 #   tmux new -s ricerca
@@ -28,12 +32,16 @@ PROGETTO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="$PROGETTO/venv"
 # ---------------------------------------------------------------------------
 
-FEATURE_SET="${1:-low}"
-N_TENTATIVI="${2:-25}"
+# Gli argomenti vengono passati tutti a ottimizza.py cosi' come sono: quel
+# file li riconosce per quello che sono e non per la posizione, quindi
+# "high arch 20" e "20 arch high" fanno la stessa cosa. Qui servono solo a
+# costruire il nome del log.
+ETICHETTA="${*:-low}"          # tutti gli argomenti, o "low" se non ce ne sono
+ETICHETTA="${ETICHETTA// /_}"  # gli spazi diventano underscore
 
 DATA=$(date +%Y%m%d_%H%M)
 CARTELLA_LOG="$PROGETTO/logs"
-LOG="$CARTELLA_LOG/ricerca_${FEATURE_SET}_${N_TENTATIVI}tent_${DATA}.txt"
+LOG="$CARTELLA_LOG/ricerca_${ETICHETTA}_${DATA}.txt"
 
 mkdir -p "$CARTELLA_LOG"
 
@@ -53,6 +61,20 @@ source "$VENV/bin/activate"
 if ! python -c "import torch, hyperopt" 2>/dev/null; then
     echo "ERRORE: torch o hyperopt non installati nel venv."
     echo "Installali con:  pip install torch hyperopt"
+    exit 1
+fi
+
+if [ ! -f "$PROGETTO/src/ottimizza.py" ]; then
+    echo "ERRORE: non trovo $PROGETTO/src/ottimizza.py"
+    echo "Questo script va tenuto nella cartella principale del progetto."
+    exit 1
+fi
+
+# I dati si caricano dopo qualche secondo di import: senza questo controllo
+# l'errore arriverebbe comunque, ma dopo aver gia' occupato la GPU.
+if [ ! -d "$PROGETTO/data/processed" ]; then
+    echo "ERRORE: manca $PROGETTO/data/processed"
+    echo "Lancia prima prepare_data.py."
     exit 1
 fi
 
@@ -77,7 +99,7 @@ cd "$PROGETTO"
 # python -u disattiva il buffering: senza, l'output resterebbe fermo nel
 # buffer per minuti e il log sembrerebbe bloccato anche a training in corso.
 # tee scrive contemporaneamente a schermo e su file.
-python -u src/ottimizza.py "$FEATURE_SET" "$N_TENTATIVI" 2>&1 | tee "$LOG"
+python -u src/ottimizza.py "$@" 2>&1 | tee "$LOG"
 
 echo
 echo "Finito. Log in $LOG"
