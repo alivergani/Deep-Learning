@@ -226,27 +226,34 @@ def costruisci_rete(n_input, addestrata):
 def estrai_attivazioni(rete, X, batch=10_000):
     """
     Passa gli eventi attraverso la rete e raccoglie l'uscita di ogni strato
-    nascosto.
+    nascosto, piu' l'uscita finale (il logit di classificazione).
 
-    Restituisce una lista: un array (N, 300) per ogni strato.
+    Restituisce (attivazioni, uscita): attivazioni e' una lista di array
+    (N, 300), uno per strato nascosto; uscita e' un array (N, 1) col logit
+    finale, utile per chiedersi se anche la decisione segnale/fondo, da
+    sola, lascia leggere le masse.
 
     La rete e' congelata: torch.no_grad() disattiva il calcolo dei gradienti,
     quindi nulla puo' modificare i pesi e il calcolo e' piu' leggero.
     """
     pezzi_per_strato = None
+    pezzi_uscita = []
 
     with torch.no_grad():
         for i in range(0, len(X), batch):
             xb = torch.from_numpy(X[i:i + batch])
-            _, attivazioni = rete(xb, restituisci_attivazioni=True)
+            logit, attivazioni = rete(xb, restituisci_attivazioni=True)
 
             if pezzi_per_strato is None:
                 pezzi_per_strato = [[] for _ in attivazioni]
 
             for k, a in enumerate(attivazioni):
                 pezzi_per_strato[k].append(a.numpy())
+            pezzi_uscita.append(logit.numpy())
 
-    return [np.concatenate(pezzi) for pezzi in pezzi_per_strato]
+    attivazioni = [np.concatenate(pezzi) for pezzi in pezzi_per_strato]
+    uscita = np.concatenate(pezzi_uscita)
+    return attivazioni, uscita
 
 
 # ---------------------------------------------------------------------------
@@ -312,19 +319,21 @@ def main():
     # --- riferimento 2: rete non addestrata -------------------------------
     print("Riferimento: rete non addestrata")
     rete_casuale = costruisci_rete(n_input, addestrata=False)
-    att_casuali = estrai_attivazioni(rete_casuale, X)
+    att_casuali, uscita_casuale = estrai_attivazioni(rete_casuale, X)
     for k, A in enumerate(att_casuali, start=1):
         risultati[f"casuale_strato{k}"] = esegui_probe(A, Y).tolist()
-    del att_casuali
+    risultati["casuale_uscita"] = esegui_probe(uscita_casuale, Y).tolist()
+    del att_casuali, uscita_casuale
 
     # --- la rete addestrata ------------------------------------------------
     print("Rete addestrata")
     rete = costruisci_rete(n_input, addestrata=True)
-    attivazioni = estrai_attivazioni(rete, X)
+    attivazioni, uscita = estrai_attivazioni(rete, X)
     for k, A in enumerate(attivazioni, start=1):
         risultati[f"strato{k}"] = esegui_probe(A, Y).tolist()
+    risultati["uscita"] = esegui_probe(uscita, Y).tolist()
     n_strati = len(attivazioni)
-    del attivazioni
+    del attivazioni, uscita
 
     # --- salvataggio -------------------------------------------------------
     uscita = {
@@ -362,9 +371,11 @@ def main():
     riga("input", risultati["input"])
     for k in range(1, n_strati + 1):
         riga(f"casuale str.{k}", risultati[f"casuale_strato{k}"])
+    riga("casuale uscita", risultati["casuale_uscita"])
     print("-" * 68)
     for k in range(1, n_strati + 1):
         riga(f"strato {k}", risultati[f"strato{k}"])
+    riga("uscita", risultati["uscita"])
     print("=" * 68)
     print(f"\nSalvato in {percorso.name}")
 

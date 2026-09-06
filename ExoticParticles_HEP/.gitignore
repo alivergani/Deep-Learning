@@ -1,10 +1,18 @@
+# Python
 __pycache__/
 *.pyc
-data/
-results_small/
-runs_small/
-.ipynb_checkpoints/logs/
-*.swp
-dati_tensorboard/*
+.ipynb_checkpoints/
+venv/
+.venv/
 
+# Roba pesante: si passa con rsync, non con git
+data/
+runs/
+runs_small/
+results_small/
+dati_tensorboard/
+logs/
 *.pt
+nohup.out
+
+*.swp

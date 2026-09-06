@@ -386,7 +386,13 @@ def addestra(modello, dati,
 
         # --- un giro su tutti i dati in ordine casuale ---------------------
         modello.train()
-        somma_perdita = 0.0
+        # La somma si accumula come tensore SULLA GPU, non come float Python.
+        # Chiamare .item() ad ogni batch obbligherebbe la CPU ad aspettare che
+        # la GPU finisca il batch prima di poter mandare il successivo: con
+        # batch da 100 eventi il calcolo dura pochissimo e quell'attesa
+        # diventa la voce principale del tempo. Cosi' invece si sincronizza
+        # una volta per epoca, a fine ciclo.
+        somma_perdita = torch.zeros((), device=dispositivo)
         n_batch = 0
         norme = None
 
@@ -417,10 +423,14 @@ def addestra(modello, dati,
                 for gruppo in opt.param_groups:
                     gruppo["lr"] = lr
 
-            somma_perdita += perdita.item()
+            # detach() stacca il valore dal grafo dei gradienti: senza, la
+            # somma terrebbe in vita l'intero grafo di tutti i batch
+            # dell'epoca e la memoria esploderebbe.
+            somma_perdita += perdita.detach()
             n_batch += 1
 
-        perdita_train = somma_perdita / n_batch
+        # Unica sincronizzazione GPU -> CPU dell'epoca.
+        perdita_train = (somma_perdita / n_batch).item()
 
         # --- valutazione su validation -------------------------------------
         perdita_val, auc_val = valuta(modello, X_val, y_val, dispositivo=dispositivo)

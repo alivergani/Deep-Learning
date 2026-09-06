@@ -106,6 +106,11 @@ Il nome contiene la configurazione, cosi' ricerche fatte con dati, batch o
 spazi diversi restano tutte su disco e sono confrontabili fra loro: la
 ricerca su 1M e quella su 3M convivono, ed e' il confronto fra le due a
 mostrare quanto il weight decay ottimo dipenda dalla dimensione dei dati.
+
+Il file viene riscritto dopo OGNI tentativo, con un campo "completo" che dice
+se la ricerca e' arrivata in fondo. Una ricerca di 25 tentativi su 3 milioni
+di eventi dura ore: se la sessione cade a meta', i tentativi gia' fatti sono
+comunque su disco e leggibili.
 """
 
 import json
@@ -115,12 +120,13 @@ from functools import partial
 from pathlib import Path
 
 import numpy as np
+import torch
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 from data import prepara_dati
 from features import INDICI
 from models import MLP, conta_parametri
-from train import addestra
+from train import addestra, PAZIENZA_ADAMW
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +155,18 @@ N_VAL = 500_000
 N_TEST = 100_000        # non usato: la ricerca non tocca mai il test set
 BATCH = 100             # lo stesso dei training finali, deve esserlo
 MAX_EPOCHE = 30
-PAZIENZA = 10
+
+# La pazienza dell'early stopping e' presa da train.py invece di essere
+# riscritta qui: la ricerca deve usare la stessa regola di arresto dei
+# training finali, altrimenti sceglie gli iperparametri di una pipeline che
+# poi non e' quella che si usa.
+#
+# Con 15 e un tetto di 30 epoche l'arresto anticipato quasi non interviene, e
+# va bene cosi': una pazienza corta penalizzerebbe le configurazioni che
+# migliorano lentamente, cioe' proprio quelle a weight decay basso, che sono
+# quelle che ci aspettiamo vincano. Sarebbe un pregiudizio nella direzione
+# sbagliata.
+PAZIENZA = PAZIENZA_ADAMW
 
 # I primi tentativi TPE li fa a caso, per farsi un'idea dello spazio prima
 # di iniziare a sfruttare quello che ha imparato. Con meno di una decina di
@@ -195,14 +212,19 @@ for argomento in sys.argv[1:]:
 # serve per numeri interi come la profondita' e le unita' per strato.
 # Restituisce float, quindi vanno convertiti con int().
 
+LR_MIN, LR_MAX = 1e-4, 1e-2
+WD_MIN, WD_MAX = 1e-6, 1e-2
+STRATI_MIN, STRATI_MAX = 2, 8
+UNITA_MIN, UNITA_MAX = 100, 1000
+
 SPAZIO = {
-    "lr": hp.loguniform("lr", np.log(1e-4), np.log(1e-2)),
+    "lr": hp.loguniform("lr", np.log(LR_MIN), np.log(LR_MAX)),
     # L'intervallo del weight decay arriva molto in basso di proposito:
     # se la ricerca converge verso 1e-6 la risposta e' "la regolarizzazione
     # non serve", che e' essa stessa un risultato da riportare. Con 3
     # milioni di eventi e' anche l'esito piu' probabile, ed e' il motivo per
     # cui l'estremo inferiore non e' stato alzato.
-    "weight_decay": hp.loguniform("weight_decay", np.log(1e-6), np.log(1e-2)),
+    "weight_decay": hp.loguniform("weight_decay", np.log(WD_MIN), np.log(WD_MAX)),
 }
 
 if CERCA_ARCHITETTURA:
@@ -211,14 +233,40 @@ if CERCA_ARCHITETTURA:
     # tanh andare oltre diventa difficile per la diffusione del gradiente;
     # con ReLU e He il problema non si pone, quindi vale la pena guardare
     # se il guadagno continua dove il paper si era fermato.
-    SPAZIO["n_strati"] = hp.quniform("n_strati", 2, 8, 1)
+    SPAZIO["n_strati"] = hp.quniform("n_strati", STRATI_MIN, STRATI_MAX, 1)
     # Da 100 a 1000 unita', a passi di 100. Il paper esplorava 100-500.
-    SPAZIO["n_unita"] = hp.quniform("n_unita", 100, 1000, 100)
+    SPAZIO["n_unita"] = hp.quniform("n_unita", UNITA_MIN, UNITA_MAX, 100)
 
-# Sottocartella dei log distinta per le due modalita'.
-CARTELLA_LOG = PROGETTO / "runs_small" / (
-    "ottimizzazione_arch" if CERCA_ARCHITETTURA else "ottimizzazione"
-)
+
+# --- nomi dei file di uscita ----------------------------------------------
+# L'etichetta contiene la configurazione, e finisce sia nel nome del JSON sia
+# in quello della cartella dei log. Senza, i log della ricerca su 3 milioni
+# finirebbero nelle stesse cartelle di quella su 1 milione (stesso feature
+# set, stessi numeri di tentativo) e TensorBoard sovrapporrebbe due ricerche
+# diverse sullo stesso grafico.
+ETICHETTA = f"{N_TRAIN // 1000}k_batch{BATCH}"
+if CERCA_ARCHITETTURA:
+    ETICHETTA += "_arch"
+
+PERCORSO_USCITA = (CARTELLA_RISULTATI /
+                   f"ottimizzazione_{FEATURE_SET}_{ETICHETTA}.json")
+
+CARTELLA_LOG = PROGETTO / "runs_small" / f"ottimizzazione_{FEATURE_SET}_{ETICHETTA}"
+
+
+# --- controllo del dispositivo ---------------------------------------------
+# Meglio saperlo subito che dopo dieci minuti di caricamento dati: su CPU una
+# ricerca come questa non finirebbe in tempi utili, quindi se la GPU non c'e'
+# e' quasi sempre un ambiente sbagliato, non una scelta.
+DISPOSITIVO = "cuda" if torch.cuda.is_available() else "cpu"
+if DISPOSITIVO == "cuda":
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+else:
+    print("ATTENZIONE: nessuna GPU trovata, si userebbe la CPU.")
+    print("Controlla di essere sulla macchina giusta e nel venv giusto.")
+    if input("Proseguire lo stesso? [s/N] ").strip().lower() != "s":
+        raise SystemExit("Interrotto.")
+print()
 
 
 # I dati si caricano UNA VOLTA SOLA, fuori dalla funzione obiettivo:
@@ -232,6 +280,12 @@ print()
 
 # Contatore dei tentativi, serve solo per stampare e per i nomi dei log.
 contatore = {"n": 0}
+
+# I tentativi gia' conclusi, nell'ordine in cui sono stati provati. Vengono
+# riempiti da obiettivo() e riscritti su disco dopo ogni tentativo: se la
+# sessione muore a meta' ricerca, quello che era gia' stato fatto resta.
+TENTATIVI = []
+T_INIZIO = time.time()
 
 
 def obiettivo(parametri):
@@ -262,6 +316,14 @@ def obiettivo(parametri):
     else:
         n_strati = STRATI_PAPER
         n_unita = UNITA_PAPER
+
+    # Il seme va fissato QUI, non dentro addestra(): i pesi iniziali si
+    # estraggono nella riga sotto, cioe' prima che addestra() venga chiamata.
+    # Senza questa riga ogni tentativo partirebbe da un'inizializzazione
+    # diversa, perche' il generatore casuale globale avanza ad ogni tentativo,
+    # e parte della differenza di AUC fra due configurazioni verrebbe dai pesi
+    # iniziali invece che dagli iperparametri.
+    torch.manual_seed(SEME)
 
     # Si costruisce MLP direttamente invece di rete_profonda, perche' qui
     # profondita' e larghezza devono poter cambiare.
@@ -306,6 +368,31 @@ def obiettivo(parametri):
           f"(epoca {epoca_scelta + 1} di {len(storia['auc_val'])}, "
           f"{minuti:.1f} min)", flush=True)
 
+    TENTATIVI.append({
+        "tentativo": i,
+        "lr": float(lr),
+        "weight_decay": float(wd),
+        "n_strati": n_strati,
+        "n_unita": n_unita,
+        "n_parametri": n_parametri,
+        "auc": float(auc),
+        "epoca_scelta": epoca_scelta + 1,
+        "n_epoche": len(storia["auc_val"]),
+        "minuti": round(minuti, 2),
+    })
+
+    # Su disco subito, non alla fine: una ricerca di 25 tentativi dura ore, e
+    # un file scritto solo in fondo significa che qualunque interruzione
+    # butta via tutto.
+    scrivi_risultati(completo=False)
+
+    # Stima del tempo rimanente, dalla media dei tentativi gia' fatti.
+    medio = sum(t["minuti"] for t in TENTATIVI) / len(TENTATIVI)
+    rimasti = (N_TENTATIVI - len(TENTATIVI)) * medio
+    if rimasti > 0:
+        print(f"          mancano ~{rimasti / 60:.1f} h "
+              f"({medio:.1f} min per tentativo)", flush=True)
+
     return {
         "loss": 1.0 - auc,          # hyperopt MINIMIZZA questa quantita'
         "status": STATUS_OK,
@@ -320,6 +407,54 @@ def obiettivo(parametri):
         "n_epoche": len(storia["auc_val"]),
         "minuti": round(minuti, 2),
     }
+
+
+def scrivi_risultati(completo):
+    """
+    Scrive su disco lo stato attuale della ricerca.
+
+    Viene chiamata dopo ogni tentativo con completo=False e una volta alla
+    fine con completo=True. Il file e' sempre lo stesso: se il programma si
+    interrompe, quello che resta su disco e' un JSON valido con i tentativi
+    fatti fino a quel momento e "completo": false a dirlo.
+    """
+    CARTELLA_RISULTATI.mkdir(parents=True, exist_ok=True)
+
+    spazio_descritto = {
+        "lr": [LR_MIN, LR_MAX],
+        "weight_decay": [WD_MIN, WD_MAX],
+    }
+    if CERCA_ARCHITETTURA:
+        spazio_descritto["n_strati"] = [STRATI_MIN, STRATI_MAX]
+        spazio_descritto["n_unita"] = [UNITA_MIN, UNITA_MAX]
+
+    migliore = None
+    if TENTATIVI:
+        migliore = max(TENTATIVI, key=lambda t: t["auc"])
+
+    uscita = {
+        "completo": completo,
+        "feature_set": FEATURE_SET,
+        "modello": "deep",
+        "stack": "moderno",
+        "cerca_architettura": CERCA_ARCHITETTURA,
+        "n_tentativi": N_TENTATIVI,
+        "n_tentativi_fatti": len(TENTATIVI),
+        "n_tentativi_casuali": TENTATIVI_CASUALI,
+        "seme": SEME,
+        "n_train": N_TRAIN,
+        "n_val": N_VAL,
+        "batch": BATCH,
+        "max_epoche": MAX_EPOCHE,
+        "pazienza": PAZIENZA,
+        "minuti_totali": round((time.time() - T_INIZIO) / 60, 1),
+        "spazio": spazio_descritto,
+        "migliore": migliore,
+        "tentativi": TENTATIVI,
+    }
+
+    with open(PERCORSO_USCITA, "w") as f:
+        json.dump(uscita, f, indent=2)
 
 
 def main():
@@ -340,7 +475,11 @@ def main():
     print(f"Eventi val       : {N_VAL:,}")
     print(f"Epoche massime   : {MAX_EPOCHE}  "
           f"(~{N_TRAIN // BATCH * MAX_EPOCHE:,} aggiornamenti per tentativo)")
+    print(f"Pazienza         : {PAZIENZA}  (come i training finali)")
     print(f"Seme fisso       : {SEME}")
+    print(f"Dispositivo      : {DISPOSITIVO}")
+    print(f"Uscita           : {PERCORSO_USCITA.name}  "
+          f"(riscritto dopo ogni tentativo)")
     print("=" * 72)
     print()
 
@@ -368,61 +507,12 @@ def main():
     minuti_totali = (time.time() - t0) / 60
 
     # --- raccolta dei risultati -------------------------------------------
-    # trials.results e' la lista dei dizionari restituiti da obiettivo(),
-    # nell'ordine in cui sono stati provati.
-    tentativi = []
-    for k, risultato in enumerate(trials.results, start=1):
-        tentativi.append({
-            "tentativo": k,
-            "lr": risultato["lr"],
-            "weight_decay": risultato["weight_decay"],
-            "n_strati": risultato["n_strati"],
-            "n_unita": risultato["n_unita"],
-            "n_parametri": risultato["n_parametri"],
-            "auc": risultato["auc"],
-            "epoca_scelta": risultato["epoca_scelta"],
-            "n_epoche": risultato["n_epoche"],
-            "minuti": risultato["minuti"],
-        })
-
-    indice_migliore = int(np.argmin([t["loss"] for t in trials.results]))
-    migliore = tentativi[indice_migliore]
-
-    spazio_descritto = {
-        "lr": [1e-4, 1e-2],
-        "weight_decay": [1e-6, 1e-2],
-    }
-    if CERCA_ARCHITETTURA:
-        spazio_descritto["n_strati"] = [2, 8]
-        spazio_descritto["n_unita"] = [100, 1000]
-
-    uscita = {
-        "feature_set": FEATURE_SET,
-        "modello": "deep",
-        "stack": "moderno",
-        "cerca_architettura": CERCA_ARCHITETTURA,
-        "n_tentativi": N_TENTATIVI,
-        "n_tentativi_casuali": TENTATIVI_CASUALI,
-        "seme": SEME,
-        "n_train": N_TRAIN,
-        "n_val": N_VAL,
-        "batch": BATCH,
-        "max_epoche": MAX_EPOCHE,
-        "minuti_totali": round(minuti_totali, 1),
-        "spazio": spazio_descritto,
-        "migliore": migliore,
-        "tentativi": tentativi,
-    }
-
-    # Il nome contiene la configurazione: cosi' ricerche fatte con dati,
-    # batch o spazi diversi non si sovrascrivono mai.
-    etichetta = f"{N_TRAIN // 1000}k_batch{BATCH}"
-    if CERCA_ARCHITETTURA:
-        etichetta += "_arch"
-    percorso = CARTELLA_RISULTATI / f"ottimizzazione_{FEATURE_SET}_{etichetta}.json"
-
-    with open(percorso, "w") as f:
-        json.dump(uscita, f, indent=2)
+    # I tentativi sono gia' in TENTATIVI, riempita da obiettivo(). Qui si
+    # riscrive il file un'ultima volta, stavolta marcato come completo.
+    tentativi = TENTATIVI
+    migliore = max(tentativi, key=lambda t: t["auc"])
+    scrivi_risultati(completo=True)
+    percorso = PERCORSO_USCITA
 
     # --- riepilogo a schermo ----------------------------------------------
     print()
