@@ -9,10 +9,17 @@
 # che sono costanti dentro src/train.py, non argomenti da riga di comando.
 #
 # Uso:
-#     ./lancia_moderno.sh
+#     ./lancia_moderno.sh          # aspetta le 02:00 e poi lancia
+#     ./lancia_moderno.sh 03:30    # aspetta le 03:30
+#     ./lancia_moderno.sh adesso   # lancia subito, senza aspettare
 #
-# Non serve essere gia' dentro l'ambiente virtuale ne' in tmux: lo script
-# fa tutto da solo, quindi si puo' chiudere il terminale dopo.
+# I controlli (git pull, dati, GPU) girano SUBITO, prima dell'attesa: cosi'
+# se qualcosa non va lo scopri stasera e non domattina davanti a un log vuoto.
+#
+# Va lanciato dentro tmux, altrimenti chiudendo il terminale muore l'attesa:
+#     tmux new -s notte
+#     ./lancia_moderno.sh
+#     Ctrl+b, poi d
 #
 # Per vedere come procede:
 #     tail -f logs/moderno_*.log
@@ -24,6 +31,8 @@ set -e   # si ferma al primo errore invece di proseguire a vuoto
 
 PROGETTO=~/Deep-Learning/ExoticParticles_HEP
 cd "$PROGETTO"
+
+ORARIO="${1:-02:00}"   # primo argomento, oppure le 02:00 di default
 
 echo "=== Preparazione ==="
 source venv/bin/activate
@@ -58,14 +67,15 @@ if [ ! -d "$PROGETTO/data/processed" ]; then
     exit 1
 fi
 
+# Qui la GPU e' solo un avviso, non una domanda: alle 2 di notte non c'e'
+# nessuno a rispondere, e un processo che gira adesso potrebbe benissimo
+# essere finito per allora. Il controllo che conta lo rifacciamo dopo
+# l'attesa, appena prima di lanciare davvero.
 if nvidia-smi | grep -q "python"; then
-    echo "ATTENZIONE: c'e' gia' un processo python sulla GPU."
+    echo
+    echo "ATTENZIONE: adesso c'e' un processo python sulla GPU."
     nvidia-smi | grep "python"
-    read -p "Lancio lo stesso? [s/N] " risposta
-    if [ "$risposta" != "s" ]; then
-        echo "Annullato."
-        exit 0
-    fi
+    echo "Ricontrollo all'orario di lancio."
 fi
 
 # --- riepilogo, che finisce a schermo e resta nella cronologia --------------
@@ -75,6 +85,38 @@ grep -E "^(LR_ADAMW|WEIGHT_DECAY_ADAMW|PAZIENZA_ADAMW|PLATEAU_PAZIENZA|PLATEAU_F
 echo "commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'non e un repo git')"
 git status --porcelain 2>/dev/null | head
 echo
+
+# --- attesa fino all'orario indicato ---------------------------------------
+if [ "$ORARIO" = "adesso" ]; then
+    echo "=== Nessuna attesa, lancio subito ==="
+else
+    BERSAGLIO=$(date -d "$ORARIO" +%s)
+    ADESSO=$(date +%s)
+    # Se l'orario di oggi e' gia' passato, si intende quello di domani.
+    # Cosi' funziona uguale che lo lanci alle 23 o alle 00:30.
+    if [ "$BERSAGLIO" -le "$ADESSO" ]; then
+        BERSAGLIO=$(date -d "tomorrow $ORARIO" +%s)
+    fi
+    ATTESA=$(( BERSAGLIO - ADESSO ))
+
+    echo "=== Attesa ==="
+    echo "Parto alle $(date -d "@$BERSAGLIO" '+%H:%M di %A %d/%m')"
+    echo "cioe' fra $(( ATTESA / 3600 ))h $(( (ATTESA % 3600) / 60 ))m."
+    echo "Se la riga sopra e' giusta: Ctrl+b, poi d, e buonanotte."
+    sleep "$ATTESA"
+    echo
+    echo "Sveglia: sono le $(date '+%H:%M')."
+fi
+
+# Ricontrollo la GPU adesso che siamo all'orario buono. Qui, se c'e'
+# ancora qualcosa, mi fermo: e' successo qualcosa di strano e sovrapporre
+# tre training a un processo ignoto peggiorerebbe solo le cose.
+if nvidia-smi | grep -q "python"; then
+    echo "ERRORE: c'e' ancora un processo python sulla GPU."
+    nvidia-smi | grep "python"
+    echo "Non lancio."
+    exit 1
+fi
 
 # --- lancio ----------------------------------------------------------------
 # I tre girano in parallelo dentro un'unica sessione tmux, cosi'
