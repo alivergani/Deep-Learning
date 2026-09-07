@@ -86,7 +86,7 @@ WEIGHT_DECAY = 1e-5          # regolarizzazione L2
 # Adam normalizza il passo con una stima della scala dei gradienti, quindi
 # lavora su learning rate molto piu' piccoli di SGD. 1e-3 e' il valore
 # standard, 0.05 farebbe divergere subito la rete.
-LR_ADAMW = 2.1e-3             # DA AGGIORNARE con la ricerca su 3M eventi
+LR_ADAMW = 7.251109039499151e-4            # Ricerca TPE su 3M eventi, 25 tentativi, tentativo n. 15 (AUC 0.8505).
 
 # In AdamW il weight decay e' "disaccoppiato": viene applicato ai pesi in
 # modo diretto invece di essere sommato al gradiente, quindi a parita' di
@@ -102,7 +102,7 @@ LR_ADAMW = 2.1e-3             # DA AGGIORNARE con la ricerca su 3M eventi
 # La regolarizzazione ottima diminuisce al crescere dei dati: la ricerca e'
 # stata rifatta su 3M di eventi, un terzo dei training finali invece di un
 # decimo.
-WEIGHT_DECAY_ADAMW = 9.76e-3  # DA AGGIORNARE con la ricerca su 3M eventi
+WEIGHT_DECAY_ADAMW = 1.0725399645937344e-5  # Ricerca TPE su 3M eventi, 25 tentativi, tentativo n. 15 (AUC 0.8505).
 
 # beta1 e' l'analogo del momentum in Adam: qui resta fisso, non c'e' rampa.
 BETA1 = 0.9
