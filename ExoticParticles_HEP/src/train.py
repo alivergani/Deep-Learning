@@ -153,7 +153,7 @@ MAX_EPOCHE = 1000            # limite di sicurezza
 # rispettato il vincolo che la pazienza dello scheduler sia la piu' piccola
 # delle due.
 PAZIENZA_SGD = 10       # stack 2014, invariato
-PAZIENZA_ADAMW = 25     # stack moderno
+PAZIENZA_ADAMW = 15     # stack moderno
 
 MIGLIORAMENTO_MINIMO = 1e-5  # miglioramento relativo che conta come progresso
 
