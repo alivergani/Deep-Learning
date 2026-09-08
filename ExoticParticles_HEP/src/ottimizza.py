@@ -264,8 +264,13 @@ if DISPOSITIVO == "cuda":
 else:
     print("ATTENZIONE: nessuna GPU trovata, si userebbe la CPU.")
     print("Controlla di essere sulla macchina giusta e nel venv giusto.")
-    if input("Proseguire lo stesso? [s/N] ").strip().lower() != "s":
-        raise SystemExit("Interrotto.")
+    try:
+        risposta = input("Proseguire lo stesso? [s/N] ").strip().lower()
+    except EOFError:
+        # Lanciato di notte da uno script, senza nessuno a rispondere.
+        risposta = "n"
+    if risposta != "s":
+        raise SystemExit("Interrotto: nessuna GPU disponibile.")
 print()
 
 
