@@ -219,9 +219,9 @@ else:
 # non ha senso prendere l'una senza l'altro.
 if ARCH_OTTIMIZZATA:
     N_STRATI = 7
-    N_UNITA = 700
-    LR = 2.46e-3
-    WEIGHT_DECAY = 9.85e-3
+    N_UNITA = 400
+    LR = 8.04e-4
+    WEIGHT_DECAY = 9.58e-3
 
 
 # --- i valori davvero usati -----------------------------------------------
