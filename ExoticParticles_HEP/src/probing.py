@@ -38,17 +38,68 @@ lo script calcola sempre anche:
 Il risultato vero e' la DIFFERENZA fra la rete addestrata e questi due,
 e l'andamento dell'R^2 con la profondita' dello strato.
 
+PERCHE' LE ATTIVAZIONI VENGONO STANDARDIZZATE
+---------------------------------------------
+Prima della ridge ogni colonna della rappresentazione viene portata a media
+0 e deviazione standard 1, con media e deviazione stimate SOLO sugli eventi
+di fit e poi applicate a quelli di misura (altrimenti l'insieme di misura
+non sarebbe piu' davvero mai visto).
+
+Non e' un dettaglio cosmetico. La ridge penalizza la somma dei quadrati dei
+coefficienti, quindi la forza effettiva della penalita' dipende dalla scala
+delle variabili: uno strato con attivazioni piccole verrebbe regolarizzato
+molto piu' di uno con attivazioni grandi, e i due R^2 non sarebbero
+confrontabili. Siccome l'intero risultato e' un confronto fra strati, la
+scala va tolta di mezzo.
+
+Senza standardizzazione l'ultimo strato nascosto dava R^2 fortemente
+negativi (fino a -340): non "informazione persa", ma un sistema mal
+condizionato che estrapola malissimo fuori dagli eventi di fit.
+
+PERCHE' L'ALPHA NON E' PIU' FISSO
+---------------------------------
+La versione precedente usava una Ridge con alpha=10 uguale per tutte le
+rappresentazioni, per garantire la confrontabilita' fra strati.
+
+Su alcuni modelli quella scelta si rompe. Nello stack moderno l'ultimo
+strato nascosto dava R^2 intorno a -160. Non e' informazione persa: le
+attivazioni ReLU non sono limitate dall'alto e, col weight decay molto
+basso trovato dalla ricerca iperparametri, qualche evento raro arriva a
+migliaia di deviazioni standard dalla distribuzione degli eventi di fit
+(max |z| ~ 7600 contro ~50 negli strati precedenti). L'R^2 e' basato
+sull'errore quadratico, quindi una manciata di eventi con predizione
+assurda domina la media su 50.000 eventi.
+
+La soluzione e' lasciare che ogni rappresentazione scelga da sola quanto
+regolarizzare, per validazione incrociata sui soli eventi di fit. Dove le
+attivazioni hanno code pesanti la CV sceglie un alpha alto, i coefficienti
+si schiacciano e il probe smette di estrapolare in modo assurdo.
+
+La confrontabilita' fra strati non si perde, perche' era gia' garantita
+dalla standardizzazione. Cambia leggermente la domanda a cui il probe
+risponde: non piu' "quanto rende un probe lineare con questa penalita'
+fissata", ma "qual e' il miglior probe lineare possibile su questo strato",
+che e' altrettanto ben definita e non privilegia nessuno strato.
+
+Gli alpha scelti finiscono nel JSON: se lo strato profondo di un modello
+sceglie un alpha molto piu' alto degli altri, e' la misura diretta di
+quanto e' mal condizionata la sua rappresentazione.
+
 USO
 ---
     python src/probing.py deep low moderno 0
-    python src/probing.py deep low 0
+    python src/probing.py deep low 2014 0
     python src/probing.py deep low moderno small 0     (prova rapida)
+
+Lo stack va scritto sempre in modo esplicito: senza, vale il default
+STACK = "moderno", e si finisce per sondare un modello diverso da quello
+che si crede.
 
 Con "small" si leggono i dati da data/processed_small e si cercano i pesi
 in results_small/, esattamente come fa esperimenti.py: le due modalita' non
 si mescolano mai.
 
-Produce results/probing_<nome>_seme<k>.json
+Produce results/<sottocartella>/probing_<nome>_seme<k>.json
 """
 
 import json
@@ -57,8 +108,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score
+from sklearn.preprocessing import StandardScaler
 
 from data import prepara_dati
 from features import INDICI
@@ -92,11 +144,21 @@ N_TRAIN = 10_000_000
 N_VAL = 500_000
 N_TEST = 500_000
 
-# Forza della regolarizzazione della ridge regression.
-# Con 300 variabili molto correlate fra loro una regressione lineare
-# semplice e' instabile: la ridge penalizza i coefficienti grandi e
-# rende la soluzione ben definita.
-ALPHA = 10
+# Griglia di valori fra cui scegliere la forza della regolarizzazione della
+# ridge regression. Con 300 variabili molto correlate fra loro una
+# regressione lineare semplice e' instabile: la ridge penalizza i
+# coefficienti grandi e rende la soluzione ben definita.
+#
+# Non si fissa un alpha unico: ogni rappresentazione sceglie il proprio per
+# validazione incrociata sui soli eventi di fit. Vedi la nota in cima al
+# file: con alpha fisso l'ultimo strato nascosto dello stack moderno dava
+# R^2 intorno a -160, per estrapolazione su pochi eventi con attivazioni
+# estreme, non per informazione mancante.
+#
+# La griglia e' larga (da 0.1 a 1e6) proprio per coprire i casi mal
+# condizionati, dove serve una penalita' di ordini di grandezza superiore
+# a quella che basta agli strati iniziali.
+ALPHAS = np.logspace(-1, 10, 30)
 
 # ---------------------------------------------------------------------------
 
@@ -260,10 +322,10 @@ def estrai_attivazioni(rete, X, batch=10_000):
 # 3. IL PROBE
 # ---------------------------------------------------------------------------
 
-def esegui_probe(rappresentazione, Y):
+def esegui_probe(rappresentazione, Y, etichetta=""):
     """
     Addestra una regressione lineare da 'rappresentazione' a ciascuna delle
-    7 masse, e restituisce l'R^2 su eventi tenuti da parte.
+    7 masse, e restituisce (R^2, alpha scelti) su eventi tenuti da parte.
 
     rappresentazione: array (N, d). Puo' essere le attivazioni di uno strato,
                       oppure le variabili grezze in ingresso.
@@ -279,17 +341,56 @@ def esegui_probe(rappresentazione, Y):
     Y_train = Y[:N_PROBE_TRAIN]
     Y_test = Y[N_PROBE_TRAIN:]
 
-    # Una sola Ridge predice tutte e 7 le masse insieme: sklearn accetta
+    # --- standardizzazione -------------------------------------------------
+    # Media e deviazione standard si stimano SOLO sugli eventi di fit e poi
+    # si applicano a quelli di misura: stimarle su tutto vorrebbe dire far
+    # entrare gli eventi di misura nella costruzione del probe.
+    #
+    # Vedi la nota in cima al file: senza questo passaggio la stessa
+    # penalita' significherebbe una forza diversa per ogni strato, e i
+    # confronti fra strati non sarebbero piu' validi.
+    scaler = StandardScaler().fit(R_train)
+    R_train = scaler.transform(R_train)
+    R_test = scaler.transform(R_test)
+    
+    n_estremi = (np.abs(R_test) > 20).any(axis=1).sum()
+    print(f"      eventi oltre 20 sigma: {n_estremi} su {len(R_test)}")
+    R_test = np.clip(R_test, -10, 10)   
+
+    # Diagnostica. "max |z| sul test" e' la quantita' chiave: dice quanto
+    # lontano dalla distribuzione di fit arriva l'evento piu' estremo. Valori
+    # nell'ordine delle migliaia segnalano una rappresentazione con code
+    # pesanti, su cui un probe poco regolarizzato estrapola malissimo.
+    if etichetta:
+        print(f"    {etichetta:<18} scala originale: "
+              f"|x| medio = {np.abs(scaler.mean_).mean():.2f}, "
+              f"dev.std. media = {scaler.scale_.mean():.2f}")
+        print(f"      colonne quasi costanti (std < 1e-3): "
+              f"{(scaler.scale_ < 1e-3).sum()} su {len(scaler.scale_)}")
+        print(f"      max |z| sul test: {np.abs(R_test).max():.1f}")
+
+    # Una sola RidgeCV predice tutte e 7 le masse insieme: sklearn accetta
     # un bersaglio multidimensionale e risolve i 7 problemi in un colpo.
-    regressione = Ridge(alpha=ALPHA)
+    #
+    # alpha_per_target=True lascia scegliere un alpha diverso per ciascuna
+    # massa. Le 7 hanno distribuzioni molto diverse fra loro e non c'e'
+    # motivo di imporre a tutte la stessa regolarizzazione.
+    regressione = RidgeCV(alphas=ALPHAS, alpha_per_target=True)
     regressione.fit(R_train, Y_train)
     Y_previsto = regressione.predict(R_test)
+
+    alpha_scelti = np.atleast_1d(regressione.alpha_)
+
+    if etichetta:
+        print(f"      alpha scelti: "
+              f"{'  '.join(f'{a:.3g}' for a in alpha_scelti)}")
 
     # R^2 separato per ogni massa.
     # R^2 = 1 - (errore del modello) / (varianza dei dati)
     #   1  -> ricostruzione perfetta
     #   0  -> il probe non fa meglio che predire sempre la media
-    return r2_score(Y_test, Y_previsto, multioutput="raw_values")
+    r2 = r2_score(Y_test, Y_previsto, multioutput="raw_values")
+    return r2, alpha_scelti.tolist()
 
 
 # ---------------------------------------------------------------------------
@@ -300,10 +401,14 @@ def main():
     print("=" * 68)
     if PICCOLO:
         print(">>> MODALITA' PROVA: dati ridotti, pesi letti da results_small/")
-    print(f"Linear probing su {NOME}, seme {SEME}")
-    print(f"Modello: {FILE_MODELLO.name}")
+    print(f"Linear probing su {NOME}, seme {SEME}, stack {STACK}")
+    print(f"Modello: {FILE_MODELLO}")
     print(f"Probe: {N_PROBE_TRAIN:,} eventi per il fit, "
           f"{N_PROBE_TEST:,} per la misura")
+    print(f"RidgeCV su attivazioni standardizzate, alpha scelto per "
+          f"validazione incrociata")
+    print(f"  griglia: {ALPHAS.min():.3g} ... {ALPHAS.max():.3g} "
+          f"({len(ALPHAS)} valori)")
     print("=" * 68)
     print()
 
@@ -311,18 +416,25 @@ def main():
     n_input = len(INDICI[FEATURE_SET])
 
     risultati = {}
+    alphas_usati = {}
 
     # --- riferimento 1: le variabili grezze in ingresso --------------------
     print("Riferimento: variabili in ingresso")
-    risultati["input"] = esegui_probe(X, Y).tolist()
+    r2, a = esegui_probe(X, Y, "input")
+    risultati["input"] = r2.tolist()
+    alphas_usati["input"] = a
 
     # --- riferimento 2: rete non addestrata -------------------------------
     print("Riferimento: rete non addestrata")
     rete_casuale = costruisci_rete(n_input, addestrata=False)
     att_casuali, uscita_casuale = estrai_attivazioni(rete_casuale, X)
     for k, A in enumerate(att_casuali, start=1):
-        risultati[f"casuale_strato{k}"] = esegui_probe(A, Y).tolist()
-    risultati["casuale_uscita"] = esegui_probe(uscita_casuale, Y).tolist()
+        r2, a = esegui_probe(A, Y, f"casuale str.{k}")
+        risultati[f"casuale_strato{k}"] = r2.tolist()
+        alphas_usati[f"casuale_strato{k}"] = a
+    r2, a = esegui_probe(uscita_casuale, Y, "casuale uscita")
+    risultati["casuale_uscita"] = r2.tolist()
+    alphas_usati["casuale_uscita"] = a
     del att_casuali, uscita_casuale
 
     # --- la rete addestrata ------------------------------------------------
@@ -330,8 +442,12 @@ def main():
     rete = costruisci_rete(n_input, addestrata=True)
     attivazioni, uscita = estrai_attivazioni(rete, X)
     for k, A in enumerate(attivazioni, start=1):
-        risultati[f"strato{k}"] = esegui_probe(A, Y).tolist()
-    risultati["uscita"] = esegui_probe(uscita, Y).tolist()
+        r2, a = esegui_probe(A, Y, f"strato {k}")
+        risultati[f"strato{k}"] = r2.tolist()
+        alphas_usati[f"strato{k}"] = a
+    r2, a = esegui_probe(uscita, Y, "uscita")
+    risultati["uscita"] = r2.tolist()
+    alphas_usati["uscita"] = a
     n_strati = len(attivazioni)
     del attivazioni, uscita
 
@@ -344,7 +460,17 @@ def main():
         "piccolo": PICCOLO,
         "n_strati": n_strati,
         "masse": NOMI_MASSE,
-        "alpha": ALPHA,
+        # Griglia offerta alla CV e valori effettivamente scelti, uno per
+        # rappresentazione e per massa. Servono a documentare il probe: un
+        # alpha molto piu' alto su uno strato e' la misura diretta di quanto
+        # e' mal condizionata quella rappresentazione.
+        "alphas_griglia": ALPHAS.tolist(),
+        "alphas_scelti": alphas_usati,
+        # Servono a distinguere questo file da quelli prodotti dalle versioni
+        # precedenti dello script, che non standardizzavano (standardizzato)
+        # e che usavano un alpha unico fissato a mano (alpha_per_strato).
+        "standardizzato": True,
+        "alpha_per_strato": True,
         "n_probe_train": N_PROBE_TRAIN,
         "n_probe_test": N_PROBE_TEST,
         "r2": risultati,
@@ -377,7 +503,7 @@ def main():
         riga(f"strato {k}", risultati[f"strato{k}"])
     riga("uscita", risultati["uscita"])
     print("=" * 68)
-    print(f"\nSalvato in {percorso.name}")
+    print(f"\nSalvato in {percorso}")
 
 
 if __name__ == "__main__":
